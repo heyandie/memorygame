@@ -1,6 +1,6 @@
 """
 
-This is the server part of the game, with code extracted from memorygame.py.
+This is the server part of the game, with code extracted from memorygame.py and networking/server.py.
 
 Only game logic is retained from the code.
 Anything that has to do with the frontend of the game should be in the client file.
@@ -100,7 +100,7 @@ class Player(Thread):
         self.serversocket = server
         self.score = 0
 
-	# check if the two flipped cards are matching pairs
+	# check if the two flipped cards are matching pairs (lifted from memorygame.py)
 	def check_move():
 		global flipped_cards
 		global flipped_index
@@ -135,17 +135,33 @@ class Player(Thread):
 		# empty the flipped indexes
 		flipped_index = []
  
- 	# Game logic and all computations of the server should be implemented in the run() method.
- 	# To end thread, use return. Otherwise, keep everything inside the while True loop.
+ 	"""
 
- 	# Basic rundown:
- 	# 	1. Check game_state
- 	#	2. Do necessary setup and computations
- 	#	3. Send to both clients: what game_state they should be on (may differ between them),
- 	# 	   necessary variables for setup
+ 	Game logic and all computations of the server should be implemented in the run() method.
+ 	To end thread, use return. Otherwise, keep everything inside the while True loop.
+
+ 	Basic rundown:
+ 		1. Check game_state
+ 		2. Do necessary setup and computations
+ 		3. Send to both clients: what game_state they should be on (may differ between them),
+ 		   necessary variables for setup
    	 
-	# Check update() function below. Code there should be integrated with run() function.
-	# (There shouldn't be too many changes for integration... I think.) 
+	Check update() function below. Code there should be integrated with run() function.
+	(There shouldn't be too many changes for integration... I think.) 
+
+	Note: starting game_state of the server is SharedVar.state['WAIT']. Change game_state once both clients have connected.
+	Game states: (descriptions also in resources.py)
+		WAIT (server: wait for clients to connect; client: wait for other player's turn to finish)
+		START (for clients only?)
+		SETUP (initial setup of game)
+		TRANSITION (set client's game_state to this to setup game for next turn)
+		PLAY (client's turn to play; other client should have WAIT game state)
+		END (game over; scoring)
+
+
+	More notes about communication between server and client in the update() function of client.py.
+	"""
+
     def run(self):
     	while True:
 	    	message = self.link.getMessage()
@@ -262,7 +278,7 @@ def main():
 
 	# if something goes wrong...
 	except Exception as error:
-		print "SERVER: ERROR OCCURED! " + str(error)
+		print "Server: Error Occured! " + str(error)
 		traceback.print_exc()
 
 if __name__ == "__main__":

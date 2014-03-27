@@ -31,11 +31,15 @@ position_image(card_select_border,0,card_select_border.height)
 class SharedVar:
 	state = {
 			'WAIT':0,						# for the server: wait for clients to connect before starting the game
+											# for clients: wait for other player's turn to end
+
 			'START':1,						# start game (will be used for title screen/menu)
 			'SETUP':2,						# intialize variables (such as cards on the grid); used before game starts
-			'PLAYER1':3,					# player 1's turn
-			'TRANSITION_PLAYER1':4,			# setup for player 2
-			'PLAYER2':5,					# player 2's turn
-			'TRANSITION_PLAYER2':6,			# setup for player 1 
-			'END':7							# game over and scoring
+			'PLAYER1':3,					# player 1's turn (for version2)
+			'TRANSITION_PLAYER1':4,			# setup for player 2 (for version2)
+			'PLAYER2':5,					# player 2's turn (for version2)
+			'TRANSITION_PLAYER2':6,			# setup for player 1 (for version2)
+			'END':7,						# game over and scoring
+			'PLAY':8,						# for client: turn to play
+			'TRANSITION':9					# for client: setup game before each turn
 			}
