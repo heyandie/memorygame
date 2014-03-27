@@ -25,13 +25,17 @@ while i < 10 :
 card_select_border = pyglet.resource.image("card_select.png")
 position_image(card_select_border,0,card_select_border.height)
 
+# --- SharedVar ---------------------------------------------------------------------------------------------------------
+
+# Class SharedVar contains all game states
 class SharedVar:
 	state = {
-			'START':1,						# start game
-			'SETUP':2,						# intialize variables (such as cards on the grid)
+			'WAIT':0,						# for the server: wait for clients to connect before starting the game
+			'START':1,						# start game (will be used for title screen/menu)
+			'SETUP':2,						# intialize variables (such as cards on the grid); used before game starts
 			'PLAYER1':3,					# player 1's turn
 			'TRANSITION_PLAYER1':4,			# setup for player 2
 			'PLAYER2':5,					# player 2's turn
-			'TRANSITION_PLAYER2':6,			# setup for player 1
+			'TRANSITION_PLAYER2':6,			# setup for player 1 
 			'END':7							# game over and scoring
 			}

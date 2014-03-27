@@ -1,25 +1,33 @@
-import pyglet
+"""
+
+This is the server part of the game, with code extracted from memorygame.py.
+
+Only game logic is retained from the code.
+Anything that has to do with the frontend of the game should be in the client file.
+(Feel free to edit if there's missing code or extra code.)
+
+Notes:
+	- use global keyword to access global variables outside classes
+	- update() function is lifted directly from memorygame and should be integrated with run() method of Person class
+	- update() function should then be deleted
+	- run() method will check game_state and do necessary setup/computations and send data to clients (more notes below)
+
+"""
+
 import time
 import thread
 import random
-from pyglet.window import mouse
-from pyglet.window import key
+import socket
+import traceback
+from threading import Thread
+from connect import connection
 from game import resources,card
 from game.resources import SharedVar
 
-# Disable error checking for increased performance
-pyglet.options['debug_gl'] = False
+try: import simplejson as json
+except ImportError: import json
 
-from pyglet.gl import *
-
-window_width = 800
-window_height = 600
-
-# this is the main game loop
-event_loop = pyglet.app.EventLoop()
-
-# this is the main game window
-game_window = pyglet.window.Window(window_width,window_height)
+# --- Global Variables ---------------------------------------------------------------------------------------------
 
 # generate cards
 # this is the array for the cards in the boards
@@ -30,18 +38,8 @@ cards_list = []
 # so if we have 20 cards, we have twice of 0-9 indexes
 index_list = []
 
-# initialize game_state to START
-game_state = SharedVar.state['START']
-
-# scores for players
-player1 = 0
-player2 = 0
-start = True
-
-# CUT SOMETHING HERE
-
-# selector for the card
-card_select_border = pyglet.sprite.Sprite(img=resources.card_select_border,x=0,y=window_height)
+# initialize game_state to WAIT
+game_state = SharedVar.state['WAIT']
 
 # column position of the selector from 0-4
 card_select_x = 0
@@ -61,144 +59,113 @@ flipped_cards = []
 # stores the flipped indexes
 flipped_index = []
 
-# check if the two flipped cards are matching pairs
-def check_move():
-	global flipped_cards
-	global flipped_index
-	global game_state
-	global player1
-	global player2
-	global matched_index
+# player1 and player2 are clients connected to the server that will implement the Player Class
+player1 = None
+player2 = None
+serversocket = None
 
-	if flipped_cards[0].card_name != flipped_cards[1].card_name:
-		# delay the card showing for 1 second
-		event_loop.sleep(1)
-		for item in flipped_cards:
-			item.current = item.back
-		if game_state == SharedVar.state['PLAYER1']:
-			game_state = SharedVar.state['TRANSITION_PLAYER1']
-		elif game_state == SharedVar.state['PLAYER2']:
-			game_state = SharedVar.state['TRANSITION_PLAYER2']
-		
-	else:
-		for item in flipped_index:
-			matched_index.append(item)
-		if game_state == SharedVar.state['PLAYER1']:
-			player1 += 1
-		elif game_state == SharedVar.state['PLAYER2']:
-			player2 += 1
-		if len(matched_index) == 20:
-			game_state = SharedVar.state['END']
+# --- Server Configuration -----------------------------------------------------------------------------------------
 
-	# empty the flipped cards
-	flipped_cards = []
+def socketSetup():
+	host = ''
+	port = 1111 #int(raw_input("Enter port number: "))
+	serversocket = socket.socket()
 
-	# empty the flipped indexes
-	flipped_index = []
+	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	serversocket.bind((host, port))
+	print "Server ready..."
+	serversocket.listen(5)
+	return serversocket
 
-def flip(card):
-	card.current.draw()
-	
-# draw the cards on the board
-def draw_cards(cards_list):
-	for card in cards_list:
-		flip(card)
+def connectToClient():
+	global serversocket
 
-	card_select_border.draw()
+	remote_socket, addr = serversocket.accept()
+	link = connection(remote_socket)
+	print str(addr), " connected!"
+	link.sendMessage("Thank you for connecting.")
+	return (link, addr)
 
-# on key press events
-@game_window.event
-def on_key_press(symbol, modifiers):
-	global game_state
-	global card_select_x 
-	global card_select_y
-	global card_select_pos
-	global flipped_cards
-	global matched_index
-	global player1
-	global player2
+# --- Threading ----------------------------------------------------------------------------------------------------
 
-	# let user move selector to the right
-	if symbol == key.RIGHT:
-		if card_select_border.x + card_select_border.width >= window_width:
-			card_select_border.x = 0
+# Each instantiation of the Player class is a thread.
+# Add additional parameters if there's a need for them.
+class Player(Thread):
+    def __init__(self, threadID, name, link, addr, server):
+        Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.link = link
+        self.addr = addr
+        self.serversocket = server
+        self.score = 0
+
+	# check if the two flipped cards are matching pairs
+	def check_move():
+		global flipped_cards
+		global flipped_index
+		global game_state
+		global player1
+		global player2
+		global matched_index
+
+		if flipped_cards[0].card_name != flipped_cards[1].card_name:
+			# delay the card showing for 1 second
+			event_loop.sleep(1)
+			for item in flipped_cards:
+				item.current = item.back
+			if game_state == SharedVar.state['PLAYER1']:
+				game_state = SharedVar.state['TRANSITION_PLAYER1']
+			elif game_state == SharedVar.state['PLAYER2']:
+				game_state = SharedVar.state['TRANSITION_PLAYER2']
+			
 		else:
-			card_select_border.x += card_select_border.width
+			for item in flipped_index:
+				matched_index.append(item)
+			if game_state == SharedVar.state['PLAYER1']:
+				player1 += 1
+			elif game_state == SharedVar.state['PLAYER2']:
+				player2 += 1
+			if len(matched_index) == 20:
+				game_state = SharedVar.state['END']
 
-		if card_select_x >= 4:
-			card_select_x = 0
-		else:
-			card_select_x += 1
+		# empty the flipped cards
+		flipped_cards = []
 
-		card_select_pos = card_select_x + (card_select_y * 5)
+		# empty the flipped indexes
+		flipped_index = []
+ 
+ 	# Game logic and all computations of the server should be implemented in the run() method.
+ 	# To end thread, use return. Otherwise, keep everything inside the while True loop.
 
-	# let user move selector to the left
-	if symbol == key.LEFT:
-		if card_select_border.x - card_select_border.width < 0:
-			card_select_border.x = window_width - card_select_border.width
-		else:
-			card_select_border.x -= card_select_border.width
+ 	# Basic rundown:
+ 	# 	1. Check game_state
+ 	#	2. Do necessary setup and computations
+ 	#	3. Send to both clients: what game_state they should be on (may differ between them),
+ 	# 	   necessary variables for setup
+   	 
+	# Check update() function below. Code there should be integrated with run() function.
+	# (There shouldn't be too many changes for integration... I think.) 
+    def run(self):
+    	while True:
+	    	message = self.link.getMessage()
 
-		if card_select_x <= 0:
-			card_select_x = 4
-		else:
-			card_select_x -= 1
+	    	# json decodes string and converts back to data (very important!)
+	    	data = json.loads(message)
+	    	message = data['msg']
+	    	print self.name, message
 
-	card_select_pos = card_select_x + (card_select_y * 5)
+	    	if message == "QUIT":
+	    		self.link.sendMessage("Goodbye!")
+	    		print "Ending connection..."
+	    		self.link.socket.close()
+	    		self.serversocket.close()
+	    		return
 
-	# let user move selector upwards
-	if symbol == key.UP:
-		if card_select_border.y + card_select_border.height >= window_height + card_select_border.height:
-			card_select_border.y= card_select_border.height
-		else:
-			card_select_border.y += card_select_border.height
+# --- Update -------------------------------------------------------------------------------------------------------
 
-		if card_select_y <= 0:
-			card_select_y = 3
-		else:
-			card_select_y -= 1
-		
-		card_select_pos = card_select_x + (card_select_y * 5)
-
-	# let user move selector downwards
-	if symbol == key.DOWN:
-		if card_select_border.y - card_select_border.height < card_select_border.height:
-			card_select_border.y = window_height
-		else:
-			card_select_border.y -= card_select_border.height
-
-		if card_select_y >= 3:
-			card_select_y = 0
-		else:
-			card_select_y += 1
-
-		card_select_pos = card_select_x + (card_select_y * 5)
-
-	# let the users flip up a card
-	if symbol == key.SPACE:
-		if card_select_pos not in matched_index and card_select_pos not in flipped_index:
-			cards_list[card_select_pos].current = cards_list[card_select_pos].front
-			flipped_cards.append(cards_list[card_select_pos])
-			flipped_index.append(card_select_pos)
-
-# on key release events
-@game_window.event
-def on_key_release(symbol,modifiers):
-	if symbol == key.SPACE:
-		# if there are already 2 flipped cards on the board
-		if len(flipped_cards) == 2:
-			check_move()
-
-@game_window.event
-def on_close():
-	event_loop.exit()
-	game_window.close()
-	
-@game_window.event
-def on_draw():
-	game_window.clear()
-	draw_cards(cards_list)
-
+# Updated function taken directly from memorygame.py
+# This function should be deleted and integrated with the run() function in Player class instead.
 def update(dt):
 	global game_state
 	global player1
@@ -264,11 +231,39 @@ def update(dt):
 			else:
 				print "IT'S A DRAW!!"
 
-def main():
-	pyglet.clock.schedule_interval(update, 1/120.0)
-	pyglet.clock.set_fps_limit(120)
-	event_loop.run()
+# --- Main ---------------------------------------------------------------------------------------------------------
 
-# main function
+# main() function taken directly from server.py.
+def main():
+	global player1
+	global player2
+	global serversocket
+
+	try:
+		serversocket = socketSetup()
+
+		while True:
+
+			# first client to connect will be the player1 thread
+			if player1 == None:
+				link, addr = connectToClient()
+				player1 = Player(threadID=1, name="player1", link=link, addr=addr, server=serversocket)
+				player1.start()
+
+			# second client to connect will be the player2 thread
+			if player2 == None:
+				link, addr = connectToClient()
+				player2 = Player(threadID=2, name="player2", link=link, addr=addr, server=serversocket)
+				player2.start()
+
+			# don't connect to other clients (will edit this part later)
+			else:
+				break
+
+	# if something goes wrong...
+	except Exception as error:
+		print "SERVER: ERROR OCCURED! " + str(error)
+		traceback.print_exc()
+
 if __name__ == "__main__":
 	main()
