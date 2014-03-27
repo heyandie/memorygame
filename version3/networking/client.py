@@ -1,8 +1,12 @@
 import socket
 import traceback
 import threading
-import json
 from connect import connection
+
+try: import simplejson as json
+except ImportError: import json
+
+# --- Client Configuration -----------------------------------------------------------------------------------------
 
 def connectToServer(clientsocket):
 	host = ''#'10.40.72.114' #raw_input("Enter IP Address: ")
@@ -12,18 +16,22 @@ def connectToServer(clientsocket):
 	print link.getMessage()
 	return link
 
+# --- Communication with Server ------------------------------------------------------------------------------------
+
+# send messages to server
 def sender(link):
 	while True:
 		message = raw_input("> ")
-		data = {'msg':message,
-				'client': 'me'}
+		data = {'msg':message}
 
+		# json converts data to string for sending (very important!)
 		data = json.dumps(data)
 		sent = link.sendMessage(data)
 		if message == "QUIT":
 			print link.getMessage()
 			break
 
+# receive messages from server; end connection if response is "Goodbye!"
 def communicate(link, clientsocket):
 	while True:
 		response = link.getMessage()
@@ -33,6 +41,8 @@ def communicate(link, clientsocket):
 			break
 	
 	clientsocket.close()
+
+# --- Main ---------------------------------------------------------------------------------------------------------
 
 def main():
 	try:

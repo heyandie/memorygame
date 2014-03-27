@@ -3,8 +3,10 @@ import time
 import random
 import traceback
 import threading
-import json
 from connect import connection
+
+try: import simplejson as json
+except ImportError: import json
 
 def socketSetup():
 	host = ''
