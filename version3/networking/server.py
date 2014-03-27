@@ -1,3 +1,20 @@
+"""
+
+This is the general code for the server. This server will only connect up to two clients.
+
+The first client to connect to the server will be designated as player1.
+The server will print all messages sent by the clients, along with the name of the client that sent the message.
+Client names are set to "player1" and "player2".
+
+If the client sends the message "QUIT", the server will disconnect from the client.
+The server will only quit once both client connections have been disconnected.
+Otherwise, the server will continue running, waiting for messages.
+
+When integrating with the game code, the server should handle all computations and setup.
+Clients will implement whatever the server sends them.
+
+"""
+
 import socket
 import time
 import random

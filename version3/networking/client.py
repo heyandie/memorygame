@@ -1,3 +1,18 @@
+"""
+
+This is the general code for the client.
+
+The client will be able to send messages to the server in the form of a dictionary.
+json is used to encode the message into a string. The server will decode the message and print it.
+
+To disconnect, the client only needs to send the message "QUIT".
+
+When integrating with the game code, the client should send the game_state and all necessary data to the server.
+The server will handle the computations and setup. The client only needs to implement them and update the server
+when the players change the game_state.
+
+"""
+
 import socket
 import traceback
 import threading
