@@ -1,9 +1,7 @@
-##!/usr/bin/python
 import socket
 import traceback
-import Tkinter
-import tkSimpleDialog
 import threading
+import json
 from connect import connection
 
 def connectToServer(clientsocket):
@@ -17,7 +15,11 @@ def connectToServer(clientsocket):
 def sender(link):
 	while True:
 		message = raw_input("> ")
-		sent = link.sendMessage(message)
+		data = {'msg':message,
+				'client': 'me'}
+
+		data = json.dumps(data)
+		sent = link.sendMessage(data)
 		if message == "QUIT":
 			print link.getMessage()
 			break
@@ -46,13 +48,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
-'''
-message = raw_input("> ")
-sent = link.sendMessage(message)
-if message == "QUIT":
-	print link.getMessage()
-	break
-else:
-'''
-

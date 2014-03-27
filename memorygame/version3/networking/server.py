@@ -1,10 +1,9 @@
-##!/usr/bin/python
-
 import socket
 import time
 import random
 import traceback
 import threading
+import json
 from connect import connection
 
 def socketSetup():
@@ -37,24 +36,28 @@ def communicate(link, addr):
 
 	while True:
 		message = link.getMessage()
-		print str(addr), ":", message
+		data = json.loads(message)
+		message = data['msg']
+		print message
+
+		# print str(addr), ":", message
 		
-		if message == "TIME":
-			tosend = "The time now is " + time.strftime("%a %b %d %I:%M:%S %Z %Y")
-		elif message[:11] == "MY NAME IS ":
-			tosend = "Hello " + message[11:] + "!"
-		elif message == "JOKE TIME":
-			tosend = random.choice(jokes)
-		elif message == "PICKUP":
-			tosend = random.choice(pickup)
-		elif message == "QUIT":
+		# if message == "TIME":
+		# 	tosend = "The time now is " + time.strftime("%a %b %d %I:%M:%S %Z %Y")
+		# elif message[:11] == "MY NAME IS ":
+		# 	tosend = "Hello " + message[11:] + "!"
+		# elif message == "JOKE TIME":
+		# 	tosend = random.choice(jokes)
+		# elif message == "PICKUP":
+		# 	tosend = random.choice(pickup)
+		if message == "QUIT":
 			link.sendMessage("Goodbye!")
 			print "Ending connection..."
 			break
-		else:
-			tosend = "I can't understand what you're saying."
+		# else:
+		# 	tosend = "I can't understand what you're saying."
 
-		sent = link.sendMessage(tosend)
+		# sent = link.sendMessage(tosend)
 
 	link.socket.close()
 
