@@ -56,8 +56,11 @@ cards_list = []
 # so if we have 20 cards, we have twice of 0-9 indexes
 index_list = []
 
-# initialize game_state to WAIT
+# initialize game_state to WAIT; required data for communication
 game_state = SharedVar.state['WAIT']
+state = None
+msg = None
+send_message = False
 
 # for going through a game state once
 start = True
@@ -221,6 +224,7 @@ def receive():
 # --- Update/Game Loop ---------------------------------------------------------------------------------------------
 
 """
+
 NOTES ON UPDATE
 	- update() function acts as the game loop
 	- some parts should be integrated with the server while others will be retains.
@@ -268,40 +272,65 @@ NOTES ON UPDATE
 		10. When server receives data from clients during PLAY, it should check if all
 		    cards have been flipped. If so, the game is over. Server sends END game_state
 		    to both clients, with scores of each so they can update frontend.
+
 """
 
 def update(dt):
-	print "updating..."
 	global game_state
+	global state
+	global msg
 	global player1
 	global player2
 	global start
 	global link
 	global clientsocket
+	global send_message # set to True if client will send to server
 
-	message = raw_input("> ")
-	data = {'state':message}
-	send(data)
-	data = receive()
-	msg = data['msg']
+	# --- Game Loop ------------------------------------------------------------
 
 	if msg == "Goodbye!":
 		clientsocket.close()
 		event_loop.exit()
 		pyglet.app.exit()
 
+	if game_state == SharedVar.state['START']:
+		send_message = True
+		print msg
+
+	# --- Communicate ----------------------------------------------------------
+
+	if send_message:
+		message = raw_input("> ")
+		data = {'state':message, 'game_state':message}
+		send(data)
+
+		data = receive()
+		state = data['state']
+		game_state = data['game_state']
+		msg = data['msg']
+
+	send_message = False
 
 # --- Main ---------------------------------------------------------------------------------------------------------
 
 def main():
 	global link
 	global clientsocket
+	global game_state
+	global state
+	global msg
 
 	# connect with server first
 	while link == None:
 		try:
 			clientsocket = socket.socket()
 			link = connectToServer(clientsocket)
+			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT']}
+			send(data)
+			data = receive()
+			state = data['state']
+			game_state = data['game_state']
+			msg = data['msg']
 
 		except Exception as error:
 			print "Client: Error occured! " + str(error)

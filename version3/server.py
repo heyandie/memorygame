@@ -63,6 +63,10 @@ player1 = None
 player2 = None
 serversocket = None
 
+# for checking if both players are connected
+player1_connected = False
+player2_connected = False
+
 # --- Server Configuration -----------------------------------------------------------------------------------------
 
 def socketSetup():
@@ -88,6 +92,7 @@ def connectToClient():
 # --- Threading ----------------------------------------------------------------------------------------------------
 
 """
+
 NOTES ON PLAYER CLASS
 	Each instantiation of the Player class is a thread.
 	Add additional parameters if there's a need for them.
@@ -164,20 +169,40 @@ class Player(Thread):
 		return json.loads(message)
 
     def run(self):
+    	global player1_connected
+    	global player2_connected
+
     	while True:
     		data = self.receive()
 	    	state = data['state']
+	    	game_state = data['game_state']
 	    	print self.name, state
 
-	    	if state == "QUIT":
-	    		self.send({"msg":"Goodbye!"})
+	    	if state == "CONNECT":
+	    		if self.name == "player1":
+		    		player1_connected = True
+	    		elif self.name == "player2":
+		    		player2_connected = True
+
+		    	if player1_connected or player2_connected:
+		    		self.send({'state':"OKAY",
+		    				'game_state':SharedVar.state['START'],
+		    				'msg': "Start game!"})
+
+	    	elif state == "QUIT":
+	    		self.send({'state':"OKAY",
+	    				'game_state':"END",
+	    				'msg': "Goodbye!"})
+
 	    		print "Ending connection..."
 	    		self.link.socket.close()
 	    		self.serversocket.close()
 	    		return
 
 	    	else:
-	    		self.send({"msg":"Received state: " + state})
+	    		self.send({'state':"OKAY",
+	    				'game_state':"END",
+	    				'msg': "Received state: " + state})
 
 # --- Main ---------------------------------------------------------------------------------------------------------
 
