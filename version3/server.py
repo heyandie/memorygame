@@ -8,9 +8,8 @@ Anything that has to do with the frontend of the game should be in the client fi
 
 Notes:
 	- use global keyword to access global variables outside classes
-	- update() function is lifted directly from memorygame and should be integrated with run() method of Person class
-	- update() function should then be deleted
-	- run() method will check game_state and do necessary setup/computations and send data to clients (more notes below)
+	- edit run() method of Player class (notes below)
+	- additional notes can also be found in client.py
 
 """
 
@@ -88,8 +87,64 @@ def connectToClient():
 
 # --- Threading ----------------------------------------------------------------------------------------------------
 
-# Each instantiation of the Player class is a thread.
-# Add additional parameters if there's a need for them.
+"""
+NOTES ON PLAYER CLASS
+	Each instantiation of the Player class is a thread.
+	Add additional parameters if there's a need for them.
+
+	METHODS
+
+	send(data)
+		- accepts data (use dictionary) as parameters
+		- encodes data to string and sends to client
+
+	receive()
+		- receives message from client and returns decoded message
+
+	run()
+		- what the thread does
+		- game logic and all computations of the server should be implemented here
+		- to end thread, use return
+		- otherwise, keep everything inside the while True loop.
+		- code in update() function of memorygame.py should be integrated here
+
+	BASIC RUNDOWN:
+		1. Wait until client sends message
+		3. Check game_state
+		4. Do necessary setup and computations depending on what state the game is in
+		5. Send messages to both clients: (always check which player you are sending the data to)
+			- what game_state they should be on
+			- necessary variables for setup
+		 
+	ADDITIONAL NOTES:
+		- starting game_state of the server is SharedVar.state['WAIT']
+		- change game_state once both clients have connected
+		- more notes about communication between server and client in the update()
+		  function of client.py.
+		- steps for communication is much more detailed in client.py
+		  (these are, again suggestions only)
+
+	GAME STATES: (descriptions also in resources.py)
+		WAIT (server: wait for clients to connect; client: wait for other player's turn to finish)
+		START (for clients only?)
+		SETUP (initial setup of game)
+		TRANSITION (set client's game_state to this to setup game for next turn)
+		PLAY (client's turn to play; other client should have WAIT game state)
+		END (game over; scoring)
+
+	REQUIRED DATA
+		For consistency, I think we should set what data is required and what they should hold.
+		For example, data['game_state'] = current game_state the client is in.
+		data['state'] = state of communication.
+
+		Communication states:
+			"OKAY" = server received the data
+			"QUIT" = server will disconnect
+			...
+			(you can add more)
+
+"""
+
 class Player(Thread):
     def __init__(self, threadID, name, link, addr, server):
         Thread.__init__(self)

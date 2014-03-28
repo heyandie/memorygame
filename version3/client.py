@@ -1,6 +1,7 @@
 """
 
-This is the client part of the game, with code extracted from memorygame.py and networking/client.py.
+This is the client part of the game, with code extracted from memorygame.py
+and networking/client.py.
 
 Implementation of game logic (which is in the server part) should be here,
 as well as anything that has to do with the frontend of the game.
@@ -8,10 +9,9 @@ as well as anything that has to do with the frontend of the game.
 
 Notes:
 	- use global keyword to access global variables outside classes
-	- global variables player1 and player2 (used in scoring) should be integrated with Player class of server
+	- global variables player1 and player2 (used in scoring) is integrated
+	  with Player class of server.py
 	- edit update() function to only implement whatever server sends to client
-	- update() function will act as the game loop
-	- use sender() and communicate() functions to communicate with server
 
 """
 
@@ -208,7 +208,6 @@ def connectToServer(clientsocket):
 
 # --- Communication with Server ------------------------------------------------------------------------------------
 
-# send data to server
 def send(data):
 	global link
 	data = json.dumps(data)
@@ -219,34 +218,56 @@ def receive():
 	message = link.getMessage()
 	return json.loads(message)
 
-# --- Update -------------------------------------------------------------------------------------------------------
+# --- Update/Game Loop ---------------------------------------------------------------------------------------------
 
 """
-Notes:
-	- update() function should be edited. Some parts will be integrated with the server.
-	- update() should implement whatever the server sends to the client.
-	- integrate sender() and communicate() to update for communicating with server
-	- I don't think you should add additional parameters to update() function. (?)
+NOTES ON UPDATE
+	- update() function acts as the game loop
+	- some parts should be integrated with the server while others will be retains.
+	- update() should implement whatever the server sends to the client
+	- use send() and receive() functions to communicate with server
+	- send() and receive() functions automatically encode/decode the messages already
+	- send() requires one parameter (the data to be sent; use dictionary)
+	- receive() returns decoded message
+	- don't add additional parameters to update() function
 
-Basic rundown for update():
-	- update will act as game loop so it should continuously check game states
-	- no title screen/menu yet so proceed to game immediately for now
+	Other notes about communication between server and client can be found in the Player
+	class of server.py.
 
-	1. Server will send message to change game_state to START once both clients have connected.
-	2. Send message to server if game_state changed to START. Server will check if both clients are ready. (analogous to ACK)
-	3. Server will setup the game and send the data to clients so clients can setup the game according to server's specifications.
-	4. Game starts. Yay! Once server knows both clients are setup (clients should send message to let server know),
-		it should send PLAY game_state to player1 client, and WAIT game_state to player2.
-	5. In update(), client will only move if game_state is PLAY.
-	6. Send data if client is done flipping two tiles.
-	7. Server receives data, checks if both cards match, adds score of player if so, and sends data to both clients so they can update frontend.
-		Server also sets game_state of client to TRANSITION.
-	8. During TRANSITION state, clients will update data given by server. Send message to tell server they're done.
-	9. Server sends PLAY to player2, WAIT to player1. Cycle repeats.
-	10. When server receives data from clients during PLAY, it should check if all cards have been flipped. If so, the game is over.
-		Server sends END game_state to both clients, with scores of each so they can update frontend.
+	BASIC RUNDOWN:
+		- update will act as game loop so it should continuously check game states
+		- no title screen/menu yet so proceed to game immediately for now
+		- feel free to make changes; this is just the suggested rundown
 
-Other notes about communication between server and client in the run() method of Player class of server.py.
+		1. Server will send message to clients to change their game_state to START once
+		   both clients have connected.
+		
+		2. Send message to server if game_state changed to START. Server will check
+		   if both clients are ready. (analogous to ACK)
+		
+		3. Server will setup the game and send the data to clients so clients can
+		   setup the game according to server's specifications.
+		
+		4. Game starts. Yay! Once server knows both clients are setup (clients should
+		   send message to let server know), it should send PLAY game_state to player1
+		   client, and WAIT game_state to player2.
+		
+		5. In update(), client will only move if their game_state is PLAY.
+
+		6. Send data if client is done flipping two tiles.
+
+		7. Server receives data, checks if both cards match, adds score of player if so,
+		   and sends data to both clients so they can update frontend. Server also sets
+		   game_state of client to TRANSITION.
+		
+		8. During TRANSITION state, clients will update data given by server. Send
+		   message to tell server they're done.
+		
+		9. Server sends PLAY to player2, WAIT to player1. Cycle repeats.
+		
+		10. When server receives data from clients during PLAY, it should check if all
+		    cards have been flipped. If so, the game is over. Server sends END game_state
+		    to both clients, with scores of each so they can update frontend.
 """
 
 def update(dt):
