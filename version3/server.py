@@ -139,8 +139,9 @@ NOTES ON PLAYER CLASS
 
 	REQUIRED DATA
 		For consistency, I think we should set what data is required and what they should hold.
-		For example, data['game_state'] = current game_state the client is in.
-		data['state'] = state of communication.
+		data['game_state'] = current game_state the client is in
+		data['state'] = state of communication (analogous to 404 or 200 in HTTP)
+		data['msg'] = whatever you want (can be description or something)
 
 		Communication states:
 			"OKAY" = server received the data
