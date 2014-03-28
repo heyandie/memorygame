@@ -100,156 +100,32 @@ class Player(Thread):
         self.serversocket = server
         self.score = 0
 
-	# check if the two flipped cards are matching pairs (lifted from memorygame.py)
-	def check_move():
-		global flipped_cards
-		global flipped_index
-		global game_state
-		global player1
-		global player2
-		global matched_index
+    def send(self, message):
+    	message = json.dumps(message)
+    	self.link.sendMessage(message)
 
-		if flipped_cards[0].card_name != flipped_cards[1].card_name:
-			# delay the card showing for 1 second
-			event_loop.sleep(1)
-			for item in flipped_cards:
-				item.current = item.back
-			if game_state == SharedVar.state['PLAYER1']:
-				game_state = SharedVar.state['TRANSITION_PLAYER1']
-			elif game_state == SharedVar.state['PLAYER2']:
-				game_state = SharedVar.state['TRANSITION_PLAYER2']
-			
-		else:
-			for item in flipped_index:
-				matched_index.append(item)
-			if game_state == SharedVar.state['PLAYER1']:
-				player1 += 1
-			elif game_state == SharedVar.state['PLAYER2']:
-				player2 += 1
-			if len(matched_index) == 20:
-				game_state = SharedVar.state['END']
-
-		# empty the flipped cards
-		flipped_cards = []
-
-		# empty the flipped indexes
-		flipped_index = []
- 
- 	"""
-
- 	Game logic and all computations of the server should be implemented in the run() method.
- 	To end thread, use return. Otherwise, keep everything inside the while True loop.
-
- 	Basic rundown:
- 		1. Check game_state
- 		2. Do necessary setup and computations
- 		3. Send to both clients: what game_state they should be on (may differ between them),
- 		   necessary variables for setup
-   	 
-	Check update() function below. Code there should be integrated with run() function.
-	(There shouldn't be too many changes for integration... I think.) 
-
-	Note: starting game_state of the server is SharedVar.state['WAIT']. Change game_state once both clients have connected.
-	Game states: (descriptions also in resources.py)
-		WAIT (server: wait for clients to connect; client: wait for other player's turn to finish)
-		START (for clients only?)
-		SETUP (initial setup of game)
-		TRANSITION (set client's game_state to this to setup game for next turn)
-		PLAY (client's turn to play; other client should have WAIT game state)
-		END (game over; scoring)
-
-
-	More notes about communication between server and client in the update() function of client.py.
-	"""
+    def receive(self):
+		message = self.link.getMessage()
+		return json.loads(message)
 
     def run(self):
     	while True:
-	    	message = self.link.getMessage()
+    		data = self.receive()
+	    	state = data['state']
+	    	print self.name, state
 
-	    	# json decodes string and converts back to data (very important!)
-	    	data = json.loads(message)
-	    	message = data['msg']
-	    	print self.name, message
-
-	    	if message == "QUIT":
-	    		self.link.sendMessage("Goodbye!")
+	    	if state == "QUIT":
+	    		self.send({"msg":"Goodbye!"})
 	    		print "Ending connection..."
 	    		self.link.socket.close()
 	    		self.serversocket.close()
 	    		return
 
-# --- Update -------------------------------------------------------------------------------------------------------
-
-# Updated function taken directly from memorygame.py
-# This function should be deleted and integrated with the run() function in Player class instead.
-def update(dt):
-	global game_state
-	global player1
-	global player2
-	global start
-
-	if game_state == SharedVar.state['START']:
-		game_state = SharedVar.state['SETUP']
-
-	elif game_state == SharedVar.state['SETUP']:
-		# we shuffle the index list to shuffle their arrangement on the board
-		index_list = [i for i in range(10)] + [i for i in range(10)]
-		random.shuffle(index_list)
-
-		# generate images for the card
-		i = 0
-		j = 0
-		k = 0
-
-		# 4 rows
-		while i<4:
-			j=0
-
-			# 5 columns
-			while j<5:
-				x_pos = j * 160
-				y_pos = window_height - (i *150)
-
-				# index is the kth item in the shuffled index list
-				index = index_list[k]
-				card_name = "card" + str(index+1)
-				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
-				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
-				new_card = card.Card(card_back,card_front,card_name)
-				cards_list.append(new_card)
-
-				j = j + 1
-				k = k + 1
-
-			i = i + 1
-
-		game_state = SharedVar.state['PLAYER1']
-
-	# elif game_state == SharedVar.state['PLAYER1']:
-	# 	print "PLAYER1"
-
-	elif game_state == SharedVar.state['TRANSITION_PLAYER1']:
-		game_state = SharedVar.state['PLAYER2']
-
-	elif game_state == SharedVar.state['TRANSITION_PLAYER2']:
-		game_state = SharedVar.state['PLAYER1']
-
-	elif game_state == SharedVar.state['END']:
-		if start:
-			start = False
-			print "GAME OVER"
-			print "PLAYER 1 SCORE:", player1
-			print "PLAYER 2 SCORE:", player2
-			if player1 > player2:
-				print "PLAYER 1 WINS!!"
-			elif player2 > player1:
-				print "PLAYER 2 WINS!!"
-			else:
-				print "IT'S A DRAW!!"
+	    	else:
+	    		self.send({"msg":"Received state: " + state})
 
 # --- Main ---------------------------------------------------------------------------------------------------------
 
-# main() function taken directly from server.py.
 def main():
 	global player1
 	global player2

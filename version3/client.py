@@ -56,8 +56,8 @@ cards_list = []
 # so if we have 20 cards, we have twice of 0-9 indexes
 index_list = []
 
-# initialize game_state to START
-game_state = SharedVar.state['START']
+# initialize game_state to WAIT
+game_state = SharedVar.state['WAIT']
 
 # for going through a game state once
 start = True
@@ -86,6 +86,10 @@ flipped_index = []
 # scores for players (should be deleted and integrate with server?)
 player1 = 0
 player2 = 0
+
+# for client-server connection
+link = None
+clientsocket = None
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -204,34 +208,20 @@ def connectToServer(clientsocket):
 
 # --- Communication with Server ------------------------------------------------------------------------------------
 
-# send messages to server (lifted from client.py)
-def sender(link):
-	while True:
-		message = raw_input("> ")
-		data = {'msg':message}
+# send data to server
+def send(data):
+	global link
+	data = json.dumps(data)
+	link.sendMessage(data)
 
-		# json converts data to string for sending (very important!)
-		data = json.dumps(data)
-		sent = link.sendMessage(data)
-		if message == "QUIT":
-			print link.getMessage()
-			break
-
-# receive messages from server; end connection if response is "Goodbye!"; (lifted from client.py)
-def communicate(link, clientsocket):
-	while True:
-		response = link.getMessage()
-		print response
-
-		if response == "Goodbye!":
-			break
-	
-	clientsocket.close()
+def receive():
+	global link
+	message = link.getMessage()
+	return json.loads(message)
 
 # --- Update -------------------------------------------------------------------------------------------------------
 
 """
-
 Notes:
 	- update() function should be edited. Some parts will be integrated with the server.
 	- update() should implement whatever the server sends to the client.
@@ -260,84 +250,41 @@ Other notes about communication between server and client in the run() method of
 """
 
 def update(dt):
+	print "updating..."
 	global game_state
 	global player1
 	global player2
 	global start
+	global link
+	global clientsocket
 
-	if game_state == SharedVar.state['START']:
-		game_state = SharedVar.state['SETUP']
+	message = raw_input("> ")
+	data = {'state':message}
+	send(data)
+	data = receive()
+	msg = data['msg']
 
-	elif game_state == SharedVar.state['SETUP']:
-		# we shuffle the index list to shuffle their arrangement on the board
-		index_list = [i for i in range(10)] + [i for i in range(10)]
-		random.shuffle(index_list)
+	if msg == "Goodbye!":
+		clientsocket.close()
+		event_loop.exit()
+		pyglet.app.exit()
 
-		# generate images for the card
-		i = 0
-		j = 0
-		k = 0
-
-		# 4 rows
-		while i<4:
-			j=0
-
-			# 5 columns
-			while j<5:
-				x_pos = j * 160
-				y_pos = window_height - (i *150)
-
-				# index is the kth item in the shuffled index list
-				index = index_list[k]
-				card_name = "card" + str(index+1)
-				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
-				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
-				new_card = card.Card(card_back,card_front,card_name)
-				cards_list.append(new_card)
-
-				j = j + 1
-				k = k + 1
-
-			i = i + 1
-
-		game_state = SharedVar.state['PLAYER1']
-
-	# elif game_state == SharedVar.state['PLAYER1']:
-	# 	print "PLAYER1"
-
-	elif game_state == SharedVar.state['TRANSITION_PLAYER1']:
-		game_state = SharedVar.state['PLAYER2']
-
-	elif game_state == SharedVar.state['TRANSITION_PLAYER2']:
-		game_state = SharedVar.state['PLAYER1']
-
-	elif game_state == SharedVar.state['END']:
-		if start:
-			start = False
-			print "GAME OVER"
-			print "PLAYER 1 SCORE:", player1
-			print "PLAYER 2 SCORE:", player2
-			if player1 > player2:
-				print "PLAYER 1 WINS!!"
-			elif player2 > player1:
-				print "PLAYER 2 WINS!!"
-			else:
-				print "IT'S A DRAW!!"
 
 # --- Main ---------------------------------------------------------------------------------------------------------
 
 def main():
-	# connect with server first
-	try:
-		clientsocket = socket.socket()
-		link = connectToServer(clientsocket)
-		senderThread = threading.Thread(target=sender, args=(link,))
-		senderThread.start()
-		communicate(link, clientsocket)
+	global link
+	global clientsocket
 
-	except Exception as error:
-		print "Client: Error occured! " + str(error)
-		traceback.print_exc()
+	# connect with server first
+	while link == None:
+		try:
+			clientsocket = socket.socket()
+			link = connectToServer(clientsocket)
+
+		except Exception as error:
+			print "Client: Error occured! " + str(error)
+			traceback.print_exc()
 
 	# start game
 	pyglet.clock.schedule_interval(update, 1/120.0)
