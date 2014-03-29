@@ -303,11 +303,6 @@ def update(dt):
 			start = False
 			print msg
 
-		data = receive()
-		state = data['state']
-		game_state = data['game_state']
-		msg = data['msg']
-
 	# --- Communicate ----------------------------------------------------------
 
 	if send_message:
@@ -316,10 +311,15 @@ def update(dt):
 		data = {'state':message, 'game_state':message}
 		send(data)
 
+	try:
 		data = receive()
 		state = data['state']
 		game_state = data['game_state']
 		msg = data['msg']
+
+	except socket.error, e:
+		print "No data to receive."
+		msg = None
 
 	send_message = False
 

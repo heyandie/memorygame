@@ -43,3 +43,7 @@ class SharedVar:
 			'PLAY':8,						# for client: turn to play
 			'TRANSITION':9					# for client: setup game before each turn
 			}
+
+	player1_connected = False
+	player2_connected = False
+	clientlist = []
