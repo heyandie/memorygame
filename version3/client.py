@@ -289,6 +289,7 @@ def update(dt):
 	# --- Game Loop ------------------------------------------------------------
 
 	if msg == "Goodbye!":
+		print msg
 		clientsocket.close()
 		event_loop.exit()
 		pyglet.app.exit()
@@ -296,10 +297,21 @@ def update(dt):
 	if game_state == SharedVar.state['START']:
 		send_message = True
 		print msg
+	
+	elif game_state == SharedVar.state['WAIT']:
+		if start:
+			start = False
+			print msg
+
+		data = receive()
+		state = data['state']
+		game_state = data['game_state']
+		msg = data['msg']
 
 	# --- Communicate ----------------------------------------------------------
 
 	if send_message:
+		start = True
 		message = raw_input("> ")
 		data = {'state':message, 'game_state':message}
 		send(data)

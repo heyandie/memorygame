@@ -62,10 +62,12 @@ flipped_index = []
 player1 = None
 player2 = None
 serversocket = None
+clientlist = []
 
 # for checking if both players are connected
 player1_connected = False
 player2_connected = False
+connected_wait = False
 
 # --- Server Configuration -----------------------------------------------------------------------------------------
 
@@ -82,11 +84,14 @@ def socketSetup():
 
 def connectToClient():
 	global serversocket
+	global clientlist
 
 	remote_socket, addr = serversocket.accept()
 	link = connection(remote_socket)
+	clientlist.append(link)
 	print str(addr), " connected!"
-	link.sendMessage("Thank you for connecting.")
+	link.sendMessage("Thank you for connecting.\n")
+
 	return (link, addr)
 
 # --- Threading ----------------------------------------------------------------------------------------------------
@@ -101,7 +106,15 @@ NOTES ON PLAYER CLASS
 
 	send(data)
 		- accepts data (use dictionary) as parameters
-		- encodes data to string and sends to client
+		- encodes data to string and sends to own client
+
+	send_other(data)
+		- accepts data (use dictionary) as parameters
+		- encodes data to string and sends to other client
+
+	send_all(data)
+		- accepts data (use dictionary) as parameters
+		- encodes data to string and sends to both clients
 
 	receive()
 		- receives message from client and returns decoded message
@@ -165,6 +178,23 @@ class Player(Thread):
     	message = json.dumps(message)
     	self.link.sendMessage(message)
 
+    def send_all(self, message):
+    	global clientlist
+    	message = json.dumps(message)
+    	for link in clientlist:
+    		link.sendMessage(message)
+
+    def send_other(self, message):
+    	global clientlist
+    	message = json.dumps(message)
+
+    	if self.name == "player1":
+    		link = clientlist[1]
+    	elif self.name == "player2":
+    		link = clientlist[0]
+
+		link.sendMessage(message)
+
     def receive(self):
 		message = self.link.getMessage()
 		return json.loads(message)
@@ -172,6 +202,7 @@ class Player(Thread):
     def run(self):
     	global player1_connected
     	global player2_connected
+    	connected_wait = False
 
     	while True:
     		data = self.receive()
@@ -185,15 +216,25 @@ class Player(Thread):
 	    		elif self.name == "player2":
 		    		player2_connected = True
 
-		    	if player1_connected or player2_connected:
-		    		self.send({'state':"OKAY",
+		    	if player1_connected and player2_connected:
+		    		self.send_all({'state':"OKAY",
 		    				'game_state':SharedVar.state['START'],
 		    				'msg': "Start game!"})
+
+		    	elif not connected_wait:
+		    		connected_wait = True
+		    		self.send({'state':"OKAY",
+		    				'game_state':SharedVar.state['WAIT'],
+		    				'msg': "Waiting for other player to connect..."})
 
 	    	elif state == "QUIT":
 	    		self.send({'state':"OKAY",
 	    				'game_state':"END",
 	    				'msg': "Goodbye!"})
+
+	    		# self.send_other({'state':"OTHER",
+	    		# 		'game_state':"WAIT",
+	    		# 		'msg': "The other player disconnected. Please wait for another player to join in..."})
 
 	    		print "Ending connection..."
 	    		self.link.socket.close()
@@ -211,6 +252,7 @@ def main():
 	global player1
 	global player2
 	global serversocket
+	global clientlist
 
 	try:
 		serversocket = socketSetup()
@@ -224,7 +266,7 @@ def main():
 				player1.start()
 
 			# second client to connect will be the player2 thread
-			if player2 == None:
+			elif player2 == None:
 				link, addr = connectToClient()
 				player2 = Player(threadID=2, name="player2", link=link, addr=addr, server=serversocket)
 				player2.start()
