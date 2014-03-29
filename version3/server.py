@@ -11,8 +11,8 @@ import thread
 import socket
 import traceback
 from threading import Thread
-from connect import connection
-from player import Player
+from game.connect import connection
+from game.player import Player
 from game.resources import SharedVar
 
 # --- Global Variables ---------------------------------------------------------------------------------------------

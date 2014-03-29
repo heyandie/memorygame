@@ -22,7 +22,7 @@ import random
 import socket
 import traceback
 import threading
-from connect import connection
+from game.connect import connection
 from pyglet.window import mouse
 from pyglet.window import key
 from game import resources,card
