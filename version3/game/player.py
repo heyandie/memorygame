@@ -69,20 +69,32 @@ REQUIRED DATA
 
 """
 
+import pyglet
 import time
 import thread
 import random
-import socket
+# import socket
 import traceback
+import eventlet
+from eventlet.green import socket
 from threading import Thread
 from connect import connection
-from game import resources,card
+from game import resources
+from game.card import Card
 from game.resources import SharedVar
 
 try: import simplejson as json
 except ImportError: import json
 
+# Disable error checking for increased performance
+pyglet.options['debug_gl'] = False
+
+from pyglet.gl import *
+
 # --- Global Variables ---------------------------------------------------------------------------------------------
+
+window_width = 800
+window_height = 600
 
 # generate cards
 # this is the array for the cards in the boards
@@ -126,14 +138,11 @@ class Player(Thread):
         self.serversocket = server
         self.score = 0
 
+    # --- Communication -------------------------------
+
     def send(self, message):
     	message = json.dumps(message)
     	self.link.sendMessage(message)
-
-    def send_all(self, message):
-    	message = json.dumps(message)
-    	for link in SharedVar.clientlist:
-    		link.sendMessage(message)
 
     def send_other(self, message):
     	message = json.dumps(message)
@@ -145,9 +154,60 @@ class Player(Thread):
 
 		link.sendMessage(message)
 
+    def send_all(self, message):
+    	message = json.dumps(message)
+    	for link in SharedVar.clientlist:
+    		link.sendMessage(message)
+
     def receive(self):
 		message = self.link.getMessage()
 		return json.loads(message)
+
+	# --- Game Logic ----------------------------------
+
+    def setup(self):
+		global index_list
+		global cards_list
+
+		index_list = [i for i in range(10)] + [i for i in range(10)]
+		random.shuffle(index_list)
+
+		# generate images for the card
+		i = 0
+		j = 0
+		k = 0
+
+		# 4 rows
+		while i<4:
+			j=0
+
+			# 5 columns
+			while j<5:
+				x_pos = j * 160
+				y_pos = window_height - (i *150)
+
+				# index is the kth item in the shuffled index list
+				index = index_list[k]
+				card_name = "card" + str(index+1)
+				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
+				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
+				new_card = Card(card_back,card_front,card_name)
+				cards_list.append(new_card)
+
+				j = j + 1
+				k = k + 1
+
+			i = i + 1
+
+		data = {'state':"OKAY",
+				'game_state':SharedVar.state['START'],
+				'msg': "Start game!",
+				# 'cards_list':cards_list
+				}
+
+		return data
+
+    # --- Threading -----------------------------------
 
     def run(self):
     	while True:
@@ -163,9 +223,8 @@ class Player(Thread):
 		    		SharedVar.player2_connected = True
 
 		    	if SharedVar.player1_connected and SharedVar.player2_connected:
-		    		self.send_all({'state':"OKAY",
-		    				'game_state':SharedVar.state['START'],
-		    				'msg': "Start game!"})
+		    		data = self.setup()
+		    		self.send_all(data)
 
 		    	else:
 		    		self.send({'state':"OKAY",
@@ -182,7 +241,6 @@ class Player(Thread):
 	    		elif self.name == "player2":
 		    		SharedVar.player2_connected = False
 
-
 	    		if self.name == "player1" and SharedVar.player2_connected or self.name == "player2" and SharedVar.player1_connected:
 		    		self.send_other({'state':"OTHER",
 		    				'game_state':"WAIT",
@@ -190,11 +248,16 @@ class Player(Thread):
 
 	    		print "Ending connection..."
 	    		self.link.socket.close()
-	    		self.serversocket.close()
+	    		# self.serversocket.close()
+
+	    		if self.name == "player1":
+		    		SharedVar.clientlist[0] = None
+	    		elif self.name == "player2":
+		    		SharedVar.clientlist[1] = None
+
 	    		return
 
 	    	else:
 	    		self.send({'state':"OKAY",
 	    				'game_state':"END",
 	    				'msg': "Received state: " + state})
-

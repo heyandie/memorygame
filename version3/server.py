@@ -8,8 +8,10 @@ Feel free to edit if there's missing code or extra code.
 """
 
 import thread
-import socket
+# import socket
 import traceback
+import eventlet
+from eventlet.green import socket
 from threading import Thread
 from game.connect import connection
 from game.player import Player
@@ -40,7 +42,6 @@ def connectToClient():
 
 	remote_socket, addr = serversocket.accept()
 	link = connection(remote_socket)
-	SharedVar.clientlist.append(link)
 	print str(addr), " connected!"
 	link.sendMessage("Thank you for connecting.\n")
 
@@ -59,20 +60,20 @@ def main():
 
 		while True:
 			# first client to connect will be the player1 thread
-			if player1 == None:
+			if SharedVar.clientlist[0] == None:
 				link, addr = connectToClient()
 				player1 = Player(threadID=1, name="player1", link=link, addr=addr, server=serversocket)
 				player1.start()
+				SharedVar.clientlist[0] = link
 
 			# second client to connect will be the player2 thread
-			elif player2 == None:
+			elif SharedVar.clientlist[1] == None:
 				link, addr = connectToClient()
 				player2 = Player(threadID=2, name="player2", link=link, addr=addr, server=serversocket)
 				player2.start()
+				SharedVar.clientlist[1] = link
 
-			# don't connect to other clients (will edit this part later)
-			else:
-				break
+			# don't connect to other clients (limit to two)
 
 	# if something goes wrong...
 	except Exception as error:

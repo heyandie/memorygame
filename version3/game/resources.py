@@ -15,7 +15,6 @@ card_front = []
 i = 0 
 
 while i < 10 :
-
 	card_name = "card_" + str(i+1) + ".png"
 	card_front.append(pyglet.resource.image(card_name))
 	position_image(card_front[i], 0, card_back.height)
@@ -46,4 +45,4 @@ class SharedVar:
 
 	player1_connected = False
 	player2_connected = False
-	clientlist = []
+	clientlist = [None, None]

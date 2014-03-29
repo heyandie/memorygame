@@ -19,9 +19,11 @@ import pyglet
 import time
 import thread
 import random
-import socket
+# import socket
 import traceback
 import threading
+import eventlet
+from eventlet.green import socket
 from game.connect import connection
 from pyglet.window import mouse
 from pyglet.window import key
@@ -93,6 +95,7 @@ player2 = 0
 # for client-server connection
 link = None
 clientsocket = None
+data = None
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -284,6 +287,7 @@ def update(dt):
 	global start
 	global link
 	global clientsocket
+	global data
 	global send_message # set to True if client will send to server
 
 	# --- Game Loop ------------------------------------------------------------
@@ -308,8 +312,8 @@ def update(dt):
 	if send_message:
 		start = True
 		message = raw_input("> ")
-		data = {'state':message, 'game_state':message}
-		send(data)
+		send_data = {'state':message, 'game_state':message}
+		send(send_data)
 
 	try:
 		data = receive()
