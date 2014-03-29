@@ -1,15 +1,9 @@
 """
 
-This is the server part of the game, with code extracted from memorygame.py and networking/server.py.
+This is the server part of the game. Connect with clients here.
 
-Only game logic is retained from the code.
-Anything that has to do with the frontend of the game should be in the client file.
-(Feel free to edit if there's missing code or extra code.)
-
-Notes:
-	- use global keyword to access global variables outside classes
-	- edit run() method of Player class (notes below)
-	- additional notes can also be found in client.py
+Game logic will be processed by Player class (in player.py).
+Feel free to edit if there's missing code or extra code.
 
 """
 

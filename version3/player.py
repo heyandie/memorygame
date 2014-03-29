@@ -1,25 +1,26 @@
 """
 
-NOTES ON PLAYER CLASS
-	Each instantiation of the Player class is a thread.
-	Add additional parameters if there's a need for them.
+This is the Player class. Game logic will be processed here.
 
-	METHODS
+Each instantiation of the Player class is a thread (instantiated in server.py).
+Add additional parameters if there's a need for them.
+
+METHODS
 
 	send(data)
-		- accepts data (use dictionary) as parameters
-		- encodes data to string and sends to own client
+		- accepts data (use dictionary) as parameter
+		- encodes data to string and sends to own thread
 
 	send_other(data)
-		- accepts data (use dictionary) as parameters
-		- encodes data to string and sends to other client
+		- accepts data (use dictionary) as parameter
+		- encodes data to string and sends to other thread
 
 	send_all(data)
-		- accepts data (use dictionary) as parameters
-		- encodes data to string and sends to both clients
+		- accepts data (use dictionary) as parameter
+		- encodes data to string and sends to both threads
 
 	receive()
-		- receives message from client and returns decoded message
+		- receives message from thread and returns decoded message
 
 	run()
 		- what the thread does
@@ -28,41 +29,43 @@ NOTES ON PLAYER CLASS
 		- otherwise, keep everything inside the while True loop.
 		- code in update() function of memorygame.py should be integrated here
 
-	BASIC RUNDOWN:
-		1. Wait until client sends message
-		3. Check game_state
-		4. Do necessary setup and computations depending on what state the game is in
-		5. Send messages to both clients: (always check which player you are sending the data to)
-			- what game_state they should be on
-			- necessary variables for setup
-		 
-	ADDITIONAL NOTES:
-		- starting game_state of the server is SharedVar.state['WAIT']
-		- change game_state once both clients have connected
-		- more notes about communication between server and client in the update()
-		  function of client.py.
-		- steps for communication is much more detailed in client.py
-		  (these are, again suggestions only)
+BASIC RUNDOWN:
+	1. Wait until client sends message
+	3. Check game_state
+	4. Do necessary setup and computations depending on what state the game is in
+	5. Send messages to both clients: (always check which player you are sending the data to)
+		- what game_state they should be on
+		- necessary variables for setup
+	 
+ADDITIONAL NOTES:
+	- starting game_state of the server is SharedVar.state['WAIT']
+	- change game_state once both clients have connected
+	- more notes about communication between server and client in the update()
+	  function of client.py.
+	- steps for communication is much more detailed in client.py
+	  (these are, again suggestions only)
 
-	GAME STATES: (descriptions also in resources.py)
-		WAIT (server: wait for clients to connect; client: wait for other player's turn to finish)
-		START (for clients only?)
-		SETUP (initial setup of game)
-		TRANSITION (set client's game_state to this to setup game for next turn)
-		PLAY (client's turn to play; other client should have WAIT game state)
-		END (game over; scoring)
+GAME STATES: (descriptions also in resources.py)
+	WAIT (server: wait for clients to connect; client: wait for other player's turn to finish)
+	START (for clients only?)
+	SETUP (initial setup of game)
+	TRANSITION (set client's game_state to this to setup game for next turn)
+	PLAY (client's turn to play; other client should have WAIT game state)
+	END (game over; scoring)
 
-	REQUIRED DATA
-		For consistency, I think we should set what data is required and what they should hold.
-		data['game_state'] = current game_state the client is in
-		data['state'] = state of communication (analogous to 404 or 200 in HTTP)
-		data['msg'] = whatever you want (can be description or something)
+REQUIRED DATA
+	For consistency, some data to be sent should be mandatory in the protocol.
 
-		Communication states:
-			"OKAY" = server received the data
-			"QUIT" = server will disconnect
-			...
-			(you can add more)
+	data['game_state'] = current game_state the client is in
+	data['state'] = state of communication (analogous to 404 or 200 in HTTP)
+	data['msg'] = whatever you want (can be description or something)
+
+	Communication states:
+		"OKAY" = server received data from own thread
+		"OTHER" = server received data from own other thread
+		"QUIT" = server will disconnect from client
+		...
+		(you can add more)
 
 """
 
