@@ -27,7 +27,8 @@ from eventlet.green import socket
 from game.connect import connection
 from pyglet.window import mouse
 from pyglet.window import key
-from game import resources,card
+from game import resources
+from game.card import Card
 from game.resources import SharedVar
 
 try: import simplejson as json
@@ -96,6 +97,43 @@ player2 = 0
 link = None
 clientsocket = None
 data = None
+receive = True
+
+
+# check if the two flipped cards are matching pairs
+def check_move():
+	global flipped_cards
+	global flipped_index
+	global game_state
+	global player1
+	global player2
+	global matched_index
+
+	if flipped_cards[0].card_name != flipped_cards[1].card_name:
+		# delay the card showing for 1 second
+		event_loop.sleep(1)
+		for item in flipped_cards:
+			item.current = item.back
+		if game_state == SharedVar.state['PLAYER1']:
+			game_state = SharedVar.state['TRANSITION_PLAYER1']
+		elif game_state == SharedVar.state['PLAYER2']:
+			game_state = SharedVar.state['TRANSITION_PLAYER2']
+		
+	else:
+		for item in flipped_index:
+			matched_index.append(item)
+		if game_state == SharedVar.state['PLAYER1']:
+			player1 += 1
+		elif game_state == SharedVar.state['PLAYER2']:
+			player2 += 1
+		if len(matched_index) == 20:
+			game_state = SharedVar.state['END']
+
+	# empty the flipped cards
+	flipped_cards = []
+
+	# empty the flipped indexes
+	flipped_index = []
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -199,6 +237,7 @@ def on_close():
 	
 @game_window.event
 def on_draw():
+	global cards_list
 	game_window.clear()
 	draw_cards(cards_list)
 
@@ -289,6 +328,8 @@ def update(dt):
 	global clientsocket
 	global data
 	global send_message # set to True if client will send to server
+	global cards_list
+	global receive
 
 	# --- Game Loop ------------------------------------------------------------
 
@@ -307,6 +348,40 @@ def update(dt):
 			start = False
 			print msg
 
+	elif game_state == SharedVar.state['SETUP'] and data != None:
+		index_list = data['index_list']
+
+		# generate images for the card
+		i = 0
+		j = 0
+		k = 0
+
+		# 4 rows
+		while i<4:
+			j=0
+
+			# 5 columns
+			while j<5:
+				x_pos = j * 160
+				y_pos = window_height - (i *150)
+
+				# index is the kth item in the shuffled index list
+				index = index_list[k]
+				card_name = "card" + str(index+1)
+				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
+				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
+				new_card = Card(card_back,card_front,card_name)
+				cards_list.append(new_card)
+
+				j = j + 1
+				k = k + 1
+
+			i = i + 1
+
+		receive = False
+		game_state = SharedVar.state['PLAYER1']
+
+
 	# --- Communicate ----------------------------------------------------------
 
 	if send_message:
@@ -315,15 +390,16 @@ def update(dt):
 		send_data = {'state':message, 'game_state':message}
 		send(send_data)
 
-	try:
-		data = receive()
-		state = data['state']
-		game_state = data['game_state']
-		msg = data['msg']
+	if receive:
+		try:
+			data = receive()
+			state = data['state']
+			game_state = data['game_state']
+			msg = data['msg']
 
-	except socket.error, e:
-		print "No data to receive."
-		msg = None
+		except socket.error, e:
+			print "No data to receive."
+			msg = None
 
 	send_message = False
 

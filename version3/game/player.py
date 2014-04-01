@@ -166,43 +166,13 @@ class Player(Thread):
 	# --- Game Logic ----------------------------------
 
     def setup(self):
-		global index_list
-		global cards_list
-
 		index_list = [i for i in range(10)] + [i for i in range(10)]
 		random.shuffle(index_list)
 
-		# generate images for the card
-		i = 0
-		j = 0
-		k = 0
-
-		# 4 rows
-		while i<4:
-			j=0
-
-			# 5 columns
-			while j<5:
-				x_pos = j * 160
-				y_pos = window_height - (i *150)
-
-				# index is the kth item in the shuffled index list
-				index = index_list[k]
-				card_name = "card" + str(index+1)
-				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
-				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
-				new_card = Card(card_back,card_front,card_name)
-				cards_list.append(new_card)
-
-				j = j + 1
-				k = k + 1
-
-			i = i + 1
-
 		data = {'state':"OKAY",
-				'game_state':SharedVar.state['START'],
+				'game_state':SharedVar.state['SETUP'],
 				'msg': "Start game!",
-				# 'cards_list':cards_list
+				'index_list':index_list
 				}
 
 		return data
