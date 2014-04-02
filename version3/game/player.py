@@ -143,21 +143,18 @@ class Player(Thread):
     def send(self, message):
     	message = json.dumps(message)
     	self.link.sendMessage(message)
-    	print "SEND", message, "\n"
+    	print "Send."
 
     def send_other(self, message):
     	message = json.dumps(message)
-    	print self.link, type(self.link)
-    	print SharedVar.clients[1].link, type(self.link)
-
     	if self.name == "player1":
     		SharedVar.clients[1].link.sendMessage(message)
     	elif self.name == "player2":
     		SharedVar.clients[0].link.sendMessage(message)
-    	print "SEND OTHER", message, "\n"
+    	print "Send to other player."
 
     def receive(self):
-    	print "receiving..."
+    	print "\nreceiving..."
     	message = self.link.getMessage()
     	return json.loads(message)
 
@@ -198,6 +195,7 @@ class Player(Thread):
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['PLAY'],
 							'msg': "Your Turn!",
+							'matched_index':SharedVar.matched_index,
 							'index_list':index_list
 							})
 
@@ -205,6 +203,7 @@ class Player(Thread):
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['WAIT'],
 							'msg': "Wait!",
+							'matched_index':SharedVar.matched_index,
 							'index_list':index_list
 							})
 
@@ -216,6 +215,7 @@ class Player(Thread):
 
 	    		if data['score'] != 0:
 	    			for index in data['flipped_index']:
+	    				print index
 	    				SharedVar.matched_index.append(index)
 
 	    		if SharedVar.player1 + SharedVar.player2 == 10:

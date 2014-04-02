@@ -291,7 +291,6 @@ def check_move():
 	global to_receive
 	score = 0
 
-	print "Check move."
 	if flipped_cards[0].card_name != flipped_cards[1].card_name:
 		# delay the card showing for 1 second
 		event_loop.sleep(1)
@@ -306,7 +305,6 @@ def check_move():
 				'score':score,
 				'flipped_index':flipped_index}
 	send(send_data)
-	print "Sent move."
 	to_receive = True
 
 	# empty the flipped cards
@@ -319,8 +317,6 @@ def update(dt):
 	global game_state
 	global state
 	global msg
-	global player1
-	global player2
 	global start
 	global link
 	global clientsocket
@@ -330,6 +326,8 @@ def update(dt):
 	global player1
 	global player2
 	global index_list
+	global matched_index
+	global cards_list
 	# print game_state
 	# print "update", game_state
 
@@ -342,7 +340,6 @@ def update(dt):
 		pyglet.app.exit()
 	
 	if game_state == SharedVar.state['SETUP']:
-		print index_list
 		# index_list = [i for i in range(10)] + [i for i in range(10)]
 		# random.shuffle(index_list)
 		# index_list = data['index_list']
@@ -374,7 +371,6 @@ def update(dt):
 
 			i = i + 1
 
-		print "SETUP DONE"
 		send_data = {'state':"SETUP OKAY",
 					'game_state':game_state}
 		send(send_data)
@@ -415,10 +411,14 @@ def update(dt):
 			game_state = data['game_state']
 			msg = data['msg']
 
-			if game_state == "PLAYER1" or game_state == "PLAYER2":
+			if game_state == SharedVar.state["PLAY"]:
 				matched_index = data['matched_index']
+				for index, card in enumerate(cards_list):
+					if index in matched_index:
+						card.current = card.front
 
-			print "RECEIVED", msg
+
+			print msg
 			to_receive = False
 
 	except socket.error, e:
@@ -454,8 +454,6 @@ def main():
 			msg = data['msg']
 			if game_state == SharedVar.state['SETUP']:
 				index_list = data['index_list']
-				print data
-
 
 		except Exception as error:
 			print "Client: Error occured! " + str(error)
