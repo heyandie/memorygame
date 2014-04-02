@@ -411,12 +411,11 @@ def update(dt):
 			game_state = data['game_state']
 			msg = data['msg']
 
-			if game_state == SharedVar.state["PLAY"]:
+			if game_state == SharedVar.state["PLAY"] or game_state == SharedVar.state["END"]:
 				matched_index = data['matched_index']
 				for index, card in enumerate(cards_list):
 					if index in matched_index:
 						card.current = card.front
-
 
 			print msg
 			to_receive = False

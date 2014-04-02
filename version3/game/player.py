@@ -219,12 +219,15 @@ class Player(Thread):
 	    				SharedVar.matched_index.append(index)
 
 	    		if SharedVar.player1 + SharedVar.player2 == 10:
-		    		self.send({'state':"END",
-		    				'game_state':SharedVar.state['END'],
-		    				'msg': "Game Over!",
-		    				'matched_index':SharedVar.matched_index,
-		    				'player1':SharedVar.player1,
-		    				'player2':SharedVar.player2})
+	    			message_to_send = {'state':"END",
+	    				'game_state':SharedVar.state['END'],
+	    				'msg': "Game Over!",
+	    				'matched_index':SharedVar.matched_index,
+	    				'player1':SharedVar.player1,
+	    				'player2':SharedVar.player2}
+
+		    		self.send(message_to_send)
+		    		self.send_other(message_to_send)
 
 		    	else:
 			    	if data['score'] == 0: # turn over
