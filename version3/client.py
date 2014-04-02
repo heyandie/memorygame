@@ -27,7 +27,8 @@ from eventlet.green import socket
 from game.connect import connection
 from pyglet.window import mouse
 from pyglet.window import key
-from game import resources,card
+from game import resources
+from game.card import Card
 from game.resources import SharedVar
 
 try: import simplejson as json
@@ -96,6 +97,9 @@ player2 = 0
 link = None
 clientsocket = None
 data = None
+to_receive = False
+player1 = 0
+player2 = 0
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -278,6 +282,49 @@ NOTES ON UPDATE
 
 """
 
+def check_move():
+	global flipped_cards
+	global flipped_index
+	global game_state
+	global matched_index
+	global to_receive
+	score = 0
+
+	if flipped_cards[0].card_name != flipped_cards[1].card_name:
+		# delay the card showing for 1 second
+		event_loop.sleep(1)
+		for item in flipped_cards:
+			item.current = item.back		
+	else:
+		for item in flipped_index:
+			matched_index.append(item)
+		if game_state == SharedVar.state['PLAYER1']:
+			score += 1
+		elif game_state == SharedVar.state['PLAYER2']:
+			score += 1
+
+	if game_state == SharedVar.state['PLAYER1']:
+		print "PLAYER1"
+		send_data = {'state':"PLAYER1 OKAY",
+					'game_state':game_state,
+					'score':score}
+		send(send_data)
+		to_receive = True
+
+	elif game_state == SharedVar.state['PLAYER2']:
+		print "PLAYER2"
+		send_data = {'state':"PLAYER2 OKAY",
+					'game_state':game_state,
+					'score':score}
+		send(send_data)	
+		to_receive = True
+
+	# empty the flipped cards
+	flipped_cards = []
+
+	# empty the flipped indexes
+	flipped_index = []
+
 def update(dt):
 	global game_state
 	global state
@@ -289,6 +336,10 @@ def update(dt):
 	global clientsocket
 	global data
 	global send_message # set to True if client will send to server
+	global to_receive
+	global player1
+	global player2
+	# print "update", game_state
 
 	# --- Game Loop ------------------------------------------------------------
 
@@ -297,15 +348,60 @@ def update(dt):
 		clientsocket.close()
 		event_loop.exit()
 		pyglet.app.exit()
-
-	if game_state == SharedVar.state['START']:
-		send_message = True
-		print msg
 	
-	elif game_state == SharedVar.state['WAIT']:
-		if start:
-			start = False
-			print msg
+	if game_state == SharedVar.state['SETUP']:
+		print data
+		index_list = [i for i in range(10)] + [i for i in range(10)]
+		random.shuffle(index_list)
+
+		# generate images for the card
+		i = 0
+		j = 0
+		k = 0
+
+		# 4 rows
+		while i<4:
+			j=0
+
+			# 5 columns
+			while j<5:
+				x_pos = j * 160
+				y_pos = window_height - (i *150)
+
+				# index is the kth item in the shuffled index list
+				index = index_list[k]
+				card_name = "card" + str(index+1)
+				card_back = pyglet.sprite.Sprite(img=resources.card_back,x=x_pos,y=y_pos)
+				card_front = pyglet.sprite.Sprite(img=resources.card_front[index],x=x_pos,y=y_pos)
+				new_card = Card(card_back,card_front,card_name)
+				cards_list.append(new_card)
+
+				j = j + 1
+				k = k + 1
+
+			i = i + 1
+
+		print "SETUP DONE"
+		send_data = {'state':"SETUP OKAY",
+					'game_state':game_state}
+		send(send_data)
+		to_receive = True
+		game_state = SharedVar.state['WAIT']
+
+	elif game_state == SharedVar.state['END']:
+		player1 = data['player1']
+		player2 = data['player2']
+		print "GAME OVER"
+		print "PLAYER 1 SCORE:", player1
+		print "PLAYER 2 SCORE:", player2
+		if player1 > player2:
+			print "PLAYER 1 WINS!!"
+		elif player2 > player1:
+			print "PLAYER 2 WINS!!"
+		else:
+			print "IT'S A DRAW!!"
+
+		game_state = SharedVar.state['TRANSITION']
 
 	# --- Communicate ----------------------------------------------------------
 
@@ -316,16 +412,21 @@ def update(dt):
 		send(send_data)
 
 	try:
-		data = receive()
-		state = data['state']
-		game_state = data['game_state']
-		msg = data['msg']
+		if to_receive:
+			print "receiving..."
+			data = receive()
+			state = data['state']
+			game_state = data['game_state']
+			msg = data['msg']
+			print "RECEIVED", data
 
 	except socket.error, e:
 		print "No data to receive."
 		msg = None
 
 	send_message = False
+	to_receive = False
+
 
 # --- Main ---------------------------------------------------------------------------------------------------------
 

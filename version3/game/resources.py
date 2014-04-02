@@ -46,3 +46,6 @@ class SharedVar:
 	player1_connected = False
 	player2_connected = False
 	clientlist = [None, None]
+
+	player1 = 0
+	player2 = 0
