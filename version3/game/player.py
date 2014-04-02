@@ -126,6 +126,10 @@ flipped_cards = []
 # stores the flipped indexes
 flipped_index = []
 
+index_list = [i for i in range(10)] + [i for i in range(10)]
+random.shuffle(index_list)
+
+
 # --- Main ---------------------------------------------------------------------------------------------------------
 
 class Player(Thread):
@@ -166,21 +170,11 @@ class Player(Thread):
 
 	# --- Game Logic ----------------------------------
 
-    def setup(self):
-		index_list = [i for i in range(10)] + [i for i in range(10)]
-		random.shuffle(index_list)
-
-		data = {'state':"OKAY",
-				'game_state':SharedVar.state['SETUP'],
-				'msg': "SETUP game!",
-				# 'cards_list':cards_list
-				}
-
-		return data
-
     # --- Threading -----------------------------------
 
     def run(self):
+    	global index_list
+
     	while True:
     		data = self.receive()
 	    	state = data['state']
@@ -190,17 +184,22 @@ class Player(Thread):
 	    	if state == "CONNECT":
 	    		if self.name == "player1":
 		    		SharedVar.player1_connected = True
+		    		self.send({'state':"OKAY",
+							'game_state':SharedVar.state['SETUP'],
+							'msg': "Waiting for other player to connect...!",
+							'index_list':index_list
+							})
+
 	    		elif self.name == "player2":
 		    		SharedVar.player2_connected = True
-
-		    	if SharedVar.player1_connected or SharedVar.player2_connected:
-		    		data = self.setup()
-		    		self.send(data)
-
-		    	else:
 		    		self.send({'state':"OKAY",
-		    				'game_state':SharedVar.state['WAIT'],
-		    				'msg': "Waiting for other player to connect..."})
+							'game_state':SharedVar.state['SETUP'],
+							'msg': "SETUP game!",
+							'index_list':index_list
+							})
+
+		    	if SharedVar.player1_connected and SharedVar.player2_connected:
+		    		state = "SETUP OKAY"
 
 	    	elif state == "SETUP OKAY":
 		    		self.send({'state':"OKAY",

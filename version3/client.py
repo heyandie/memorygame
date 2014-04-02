@@ -97,9 +97,10 @@ player2 = 0
 link = None
 clientsocket = None
 data = None
-to_receive = False
+to_receive = True
 player1 = 0
 player2 = 0
+index_list = []
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -339,6 +340,7 @@ def update(dt):
 	global to_receive
 	global player1
 	global player2
+	global index_list
 	# print "update", game_state
 
 	# --- Game Loop ------------------------------------------------------------
@@ -350,9 +352,10 @@ def update(dt):
 		pyglet.app.exit()
 	
 	if game_state == SharedVar.state['SETUP']:
-		print data
-		index_list = [i for i in range(10)] + [i for i in range(10)]
-		random.shuffle(index_list)
+		print index_list
+		# index_list = [i for i in range(10)] + [i for i in range(10)]
+		# random.shuffle(index_list)
+		# index_list = data['index_list']
 
 		# generate images for the card
 		i = 0
@@ -418,7 +421,7 @@ def update(dt):
 			state = data['state']
 			game_state = data['game_state']
 			msg = data['msg']
-			# print "RECEIVED", data
+			print "RECEIVED", data
 
 	except socket.error, e:
 		print "No data to receive."
@@ -436,6 +439,8 @@ def main():
 	global game_state
 	global state
 	global msg
+	global to_receive
+	global index_list
 
 	# connect with server first
 	while link == None:
@@ -445,9 +450,14 @@ def main():
 			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT']}
 			send(data)
 			data = receive()
+			print "receiving..."
 			state = data['state']
 			game_state = data['game_state']
 			msg = data['msg']
+			if game_state == SharedVar.state['SETUP']:
+				index_list = data['index_list']
+				print data
+
 
 		except Exception as error:
 			print "Client: Error occured! " + str(error)
