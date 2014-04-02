@@ -15,10 +15,6 @@ METHODS
 		- accepts data (use dictionary) as parameter
 		- encodes data to string and sends to other thread
 
-	send_all(data)
-		- accepts data (use dictionary) as parameter
-		- encodes data to string and sends to both threads
-
 	receive()
 		- receives message from thread and returns decoded message
 
@@ -140,36 +136,32 @@ class Player(Thread):
         self.link = link
         self.addr = addr
         self.serversocket = server
-        self.score = 0
+        self.other_link = None
 
     # --- Communication -------------------------------
 
     def send(self, message):
     	message = json.dumps(message)
-    	print "SEND", message
     	self.link.sendMessage(message)
+    	print "SEND", message, "\n"
 
     def send_other(self, message):
     	message = json.dumps(message)
+    	print self.link, type(self.link)
+    	print SharedVar.clients[1].link, type(self.link)
 
     	if self.name == "player1":
-    		link = SharedVar.clientlist[1]
+    		SharedVar.clients[1].link.sendMessage(message)
     	elif self.name == "player2":
-    		link = SharedVar.clientlist[0]
-
-		link.sendMessage(message)
-
-    def send_all(self, message):
-    	message = json.dumps(message)
-    	for link in SharedVar.clientlist:
-    		link.sendMessage(message)
+    		SharedVar.clients[0].link.sendMessage(message)
+    	print "SEND OTHER", message, "\n"
 
     def receive(self):
-		message = self.link.getMessage()
-		return json.loads(message)
+    	print "receiving..."
+    	message = self.link.getMessage()
+    	return json.loads(message)
 
 	# --- Game Logic ----------------------------------
-
     # --- Threading -----------------------------------
 
     def run(self):
@@ -202,50 +194,62 @@ class Player(Thread):
 		    		state = "SETUP OKAY"
 
 	    	elif state == "SETUP OKAY":
+	    		if self.name == "player1":
 		    		self.send({'state':"OKAY",
-		    				'game_state':SharedVar.state['PLAYER1'],
-		    				'msg': "Player 1's Turn!"})
+							'game_state':SharedVar.state['PLAY'],
+							'msg': "Your Turn!",
+							'index_list':index_list
+							})
 
-	    	elif state == "PLAYER2 OKAY":
-	    		SharedVar.player2 += data['score']
-		    	if SharedVar.player1 + SharedVar.player2 == 10:
-		    		self.send({'state':"END",
-		    				'game_state':SharedVar.state['END'],
-		    				'msg': "Game Over!",
-		    				'player1':SharedVar.player1,
-		    				'player2':SharedVar.player2})
-
-		    	else:
-			    	if data['score'] == 0:
-			    		new_game_state = SharedVar.state['PLAYER1']
-			    		new_msg = "Player 1's Turn!"
-			    	else:
-			    		game_state = SharedVar.state['PLAYER2']
-			    		new_msg = "Player 2's Turn!"
-		    		
+	    		elif self.name == "player2":
 		    		self.send({'state':"OKAY",
-		    				'game_state':new_game_state,
-		    				'msg': new_msg})
+							'game_state':SharedVar.state['WAIT'],
+							'msg': "Wait!",
+							'index_list':index_list
+							})
 
-	    	elif state == "PLAYER1 OKAY":
-	    		SharedVar.player1 += data['score']
+	    	elif state == "PLAY OKAY":
+	    		if self.name == "player1":
+		    		SharedVar.player1 += data['score']
+	    		else:
+		    		SharedVar.player2 += data['score']
+
+	    		if data['score'] != 0:
+	    			for index in data['flipped_index']:
+	    				SharedVar.matched_index.append(index)
+
 	    		if SharedVar.player1 + SharedVar.player2 == 10:
 		    		self.send({'state':"END",
 		    				'game_state':SharedVar.state['END'],
 		    				'msg': "Game Over!",
+		    				'matched_index':SharedVar.matched_index,
 		    				'player1':SharedVar.player1,
 		    				'player2':SharedVar.player2})
+
 		    	else:
-			    	if data['score'] == 0:
-			    		new_game_state = SharedVar.state['PLAYER2']
-			    		new_msg = "Player 2's Turn!"
-			    	else:
-			    		new_game_state = SharedVar.state['PLAYER1']
-			    		new_msg = "Player 1's Turn!"
+			    	if data['score'] == 0: # turn over
+			    		new_game_state = SharedVar.state['WAIT']
+			    		other_game_state = SharedVar.state['PLAY']
+			    		new_msg = "Wait!"
+			    		other_msg = "Your Turn!"
+
+			    	else: # keep playing
+			    		new_game_state = SharedVar.state['PLAY']
+			    		other_game_state = SharedVar.state['WAIT']
+			    		new_msg = "Your Turn!"
+			    		other_msg = "Wait!"
 		    		
 		    		self.send({'state':"OKAY",
 		    				'game_state':new_game_state,
-		    				'msg': new_msg})
+		    				'msg': new_msg,
+		    				'matched_index':SharedVar.matched_index
+		    				})
+
+		    		self.send_other({'state':"OKAY",
+		    				'game_state':other_game_state,
+		    				'msg': other_msg,
+		    				'matched_index':SharedVar.matched_index
+		    				})
 
 	    	elif state == "QUIT":
 	    		self.send({'state':"OKAY",

@@ -65,13 +65,17 @@ def main():
 				player1 = Player(threadID=1, name="player1", link=link, addr=addr, server=serversocket)
 				player1.start()
 				SharedVar.clientlist[0] = link
+				SharedVar.clients[0] = player1
 
 			# second client to connect will be the player2 thread
 			elif SharedVar.clientlist[1] == None:
 				link, addr = connectToClient()
 				player2 = Player(threadID=2, name="player2", link=link, addr=addr, server=serversocket)
+				# player2.other_link = player1.link
+				# player1.other_link = link
 				player2.start()
 				SharedVar.clientlist[1] = link
+				SharedVar.clients[1] = player2
 
 			# don't connect to other clients (limit to two)
 

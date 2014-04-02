@@ -291,34 +291,23 @@ def check_move():
 	global to_receive
 	score = 0
 
+	print "Check move."
 	if flipped_cards[0].card_name != flipped_cards[1].card_name:
 		# delay the card showing for 1 second
 		event_loop.sleep(1)
 		for item in flipped_cards:
 			item.current = item.back		
 	else:
-		for item in flipped_index:
-			matched_index.append(item)
-		if game_state == SharedVar.state['PLAYER1']:
-			score += 1
-		elif game_state == SharedVar.state['PLAYER2']:
+		if game_state == SharedVar.state['PLAY']:
 			score += 1
 
-	if game_state == SharedVar.state['PLAYER1']:
-		print "PLAYER 1"
-		send_data = {'state':"PLAYER1 OKAY",
-					'game_state':game_state,
-					'score':score}
-		send(send_data)
-		to_receive = True
-
-	elif game_state == SharedVar.state['PLAYER2']:
-		print "PLAYER 2"
-		send_data = {'state':"PLAYER2 OKAY",
-					'game_state':game_state,
-					'score':score}
-		send(send_data)	
-		to_receive = True
+	send_data = {'state':"PLAY OKAY",
+				'game_state':game_state,
+				'score':score,
+				'flipped_index':flipped_index}
+	send(send_data)
+	print "Sent move."
+	to_receive = True
 
 	# empty the flipped cards
 	flipped_cards = []
@@ -341,6 +330,7 @@ def update(dt):
 	global player1
 	global player2
 	global index_list
+	# print game_state
 	# print "update", game_state
 
 	# --- Game Loop ------------------------------------------------------------
@@ -391,6 +381,9 @@ def update(dt):
 		to_receive = True
 		game_state = SharedVar.state['WAIT']
 
+	elif game_state == SharedVar.state['WAIT']:
+		to_receive = True
+
 	elif game_state == SharedVar.state['END']:
 		player1 = data['player1']
 		player2 = data['player2']
@@ -421,7 +414,12 @@ def update(dt):
 			state = data['state']
 			game_state = data['game_state']
 			msg = data['msg']
-			print "RECEIVED", data
+
+			if game_state == "PLAYER1" or game_state == "PLAYER2":
+				matched_index = data['matched_index']
+
+			print "RECEIVED", msg
+			to_receive = False
 
 	except socket.error, e:
 		print "No data to receive."
