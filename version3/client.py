@@ -128,74 +128,85 @@ def on_key_press(symbol, modifiers):
 
 	# let user move selector to the right
 	if symbol == key.RIGHT:
-		if card_select_border.x + card_select_border.width >= window_width:
-			card_select_border.x = 0
-		else:
-			card_select_border.x += card_select_border.width
+		if game_state == SharedVar.state['PLAY']:
+			if card_select_border.x + card_select_border.width >= window_width:
+				card_select_border.x = 0
+			else:
+				card_select_border.x += card_select_border.width
 
-		if card_select_x >= 4:
-			card_select_x = 0
-		else:
-			card_select_x += 1
+			if card_select_x >= 4:
+				card_select_x = 0
+			else:
+				card_select_x += 1
 
-		card_select_pos = card_select_x + (card_select_y * 5)
+			card_select_pos = card_select_x + (card_select_y * 5)
 
 	# let user move selector to the left
 	if symbol == key.LEFT:
-		if card_select_border.x - card_select_border.width < 0:
-			card_select_border.x = window_width - card_select_border.width
-		else:
-			card_select_border.x -= card_select_border.width
+		if game_state == SharedVar.state['PLAY']:
+			if card_select_border.x - card_select_border.width < 0:
+				card_select_border.x = window_width - card_select_border.width
+			else:
+				card_select_border.x -= card_select_border.width
 
-		if card_select_x <= 0:
-			card_select_x = 4
-		else:
-			card_select_x -= 1
+			if card_select_x <= 0:
+				card_select_x = 4
+			else:
+				card_select_x -= 1
 
-	card_select_pos = card_select_x + (card_select_y * 5)
+			card_select_pos = card_select_x + (card_select_y * 5)
 
 	# let user move selector upwards
 	if symbol == key.UP:
-		if card_select_border.y + card_select_border.height >= window_height + card_select_border.height:
-			card_select_border.y= card_select_border.height
-		else:
-			card_select_border.y += card_select_border.height
+		if game_state == SharedVar.state['PLAY']:
+			if card_select_border.y + card_select_border.height >= window_height + card_select_border.height:
+				card_select_border.y= card_select_border.height
+			else:
+				card_select_border.y += card_select_border.height
 
-		if card_select_y <= 0:
-			card_select_y = 3
-		else:
-			card_select_y -= 1
-		
-		card_select_pos = card_select_x + (card_select_y * 5)
+			if card_select_y <= 0:
+				card_select_y = 3
+			else:
+				card_select_y -= 1
+			
+			card_select_pos = card_select_x + (card_select_y * 5)
 
 	# let user move selector downwards
 	if symbol == key.DOWN:
-		if card_select_border.y - card_select_border.height < card_select_border.height:
-			card_select_border.y = window_height
-		else:
-			card_select_border.y -= card_select_border.height
+		if game_state == SharedVar.state['PLAY']:
+			if card_select_border.y - card_select_border.height < card_select_border.height:
+				card_select_border.y = window_height
+			else:
+				card_select_border.y -= card_select_border.height
 
-		if card_select_y >= 3:
-			card_select_y = 0
-		else:
-			card_select_y += 1
+			if card_select_y >= 3:
+				card_select_y = 0
+			else:
+				card_select_y += 1
 
-		card_select_pos = card_select_x + (card_select_y * 5)
+			card_select_pos = card_select_x + (card_select_y * 5)
 
 	# let the users flip up a card
 	if symbol == key.SPACE:
-		if card_select_pos not in matched_index and card_select_pos not in flipped_index:
-			cards_list[card_select_pos].current = cards_list[card_select_pos].front
-			flipped_cards.append(cards_list[card_select_pos])
-			flipped_index.append(card_select_pos)
+		if game_state == SharedVar.state['PLAY']:
+			if card_select_pos not in matched_index and card_select_pos not in flipped_index:
+				cards_list[card_select_pos].current = cards_list[card_select_pos].front
+				flipped_cards.append(cards_list[card_select_pos])
+				flipped_index.append(card_select_pos)
+
+		# elif card_select_pos in flipped_index:
+		# 	cards_list[card_select_pos].current = cards_list[card_select_pos].back
+		# 	flipped_cards.remove(cards_list[card_select_pos])
+		# 	flipped_index.remove(card_select_pos)
 
 # on key release events
 @game_window.event
 def on_key_release(symbol,modifiers):
 	if symbol == key.SPACE:
-		# if there are already 2 flipped cards on the board
-		if len(flipped_cards) == 2:
-			check_move()
+		if game_state == SharedVar.state['PLAY']:
+			# if there are already 2 flipped cards on the board
+			if len(flipped_cards) == 2:
+				check_move()
 
 @game_window.event
 def on_close():
