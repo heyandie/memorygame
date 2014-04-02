@@ -304,7 +304,7 @@ def check_move():
 			score += 1
 
 	if game_state == SharedVar.state['PLAYER1']:
-		print "PLAYER1"
+		print "PLAYER 1"
 		send_data = {'state':"PLAYER1 OKAY",
 					'game_state':game_state,
 					'score':score}
@@ -312,7 +312,7 @@ def check_move():
 		to_receive = True
 
 	elif game_state == SharedVar.state['PLAYER2']:
-		print "PLAYER2"
+		print "PLAYER 2"
 		send_data = {'state':"PLAYER2 OKAY",
 					'game_state':game_state,
 					'score':score}
@@ -418,7 +418,7 @@ def update(dt):
 			state = data['state']
 			game_state = data['game_state']
 			msg = data['msg']
-			print "RECEIVED", data
+			# print "RECEIVED", data
 
 	except socket.error, e:
 		print "No data to receive."

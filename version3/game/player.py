@@ -202,19 +202,31 @@ class Player(Thread):
 		    				'game_state':SharedVar.state['WAIT'],
 		    				'msg': "Waiting for other player to connect..."})
 
-	    	elif state == "SETUP OKAY" or state == "PLAYER2 OKAY":
-	    		if state == "PLAYER2 OKAY":
-		    		SharedVar.player2 += data['score']
+	    	elif state == "SETUP OKAY":
+		    		self.send({'state':"OKAY",
+		    				'game_state':SharedVar.state['PLAYER1'],
+		    				'msg': "Player 1's Turn!"})
+
+	    	elif state == "PLAYER2 OKAY":
+	    		SharedVar.player2 += data['score']
 		    	if SharedVar.player1 + SharedVar.player2 == 10:
 		    		self.send({'state':"END",
 		    				'game_state':SharedVar.state['END'],
 		    				'msg': "Game Over!",
 		    				'player1':SharedVar.player1,
 		    				'player2':SharedVar.player2})
+
 		    	else:
+			    	if data['score'] == 0:
+			    		new_game_state = SharedVar.state['PLAYER1']
+			    		new_msg = "Player 1's Turn!"
+			    	else:
+			    		game_state = SharedVar.state['PLAYER2']
+			    		new_msg = "Player 2's Turn!"
+		    		
 		    		self.send({'state':"OKAY",
-		    				'game_state':SharedVar.state['PLAYER1'],
-		    				'msg': "Player 1's Turn!"})
+		    				'game_state':new_game_state,
+		    				'msg': new_msg})
 
 	    	elif state == "PLAYER1 OKAY":
 	    		SharedVar.player1 += data['score']
@@ -225,10 +237,16 @@ class Player(Thread):
 		    				'player1':SharedVar.player1,
 		    				'player2':SharedVar.player2})
 		    	else:
+			    	if data['score'] == 0:
+			    		new_game_state = SharedVar.state['PLAYER2']
+			    		new_msg = "Player 2's Turn!"
+			    	else:
+			    		new_game_state = SharedVar.state['PLAYER1']
+			    		new_msg = "Player 1's Turn!"
+		    		
 		    		self.send({'state':"OKAY",
-		    				'game_state':SharedVar.state['PLAYER2'],
-		    				'msg': "Player 2's Turn!"})
-
+		    				'game_state':new_game_state,
+		    				'msg': new_msg})
 
 	    	elif state == "QUIT":
 	    		self.send({'state':"OKAY",
