@@ -393,6 +393,7 @@ def update(dt):
 		else:
 			print "IT'S A DRAW!!"
 
+		to_receive = False
 		game_state = SharedVar.state['TRANSITION']
 
 	# --- Communicate ----------------------------------------------------------

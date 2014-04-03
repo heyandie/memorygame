@@ -1,0 +1,62 @@
+========================================
+DOCUMENTATION
+========================================
+
+Documentation of the Protocol
+ - Message Format
+ - Actions Taken by the Client and Server
+
+Documentation of the Application
+ - Instructions on How to Build and Run the Application
+ - Minimum Requirements and Dependencies
+
+
+========================================
+PROTOCOL
+========================================
+
+I. Message Format
+	> message is a dictionary with the following required fields for the header:
+		Client sending to Server:
+			* state: analogous to the status in HTTP
+			* game_state: current game state of the client
+
+		Server sending to Client:
+			* state: should send "OKAY" if server processed the message
+			* game_state: game state the client should transition to next
+			* msg: short description of the message (for debugging purposes)
+
+	> message may contain other fields not listed above.
+
+II. Actions taken by Client and Server
+	> the server determines what action to take based on the state the client sends.Examples of states include:
+	
+		- "CONNECT"
+			connection has been established on the client side; server will send
+			how the game should be set up
+
+		- "SETUP OKAY"
+			client successfully sets up the game (both players should have the same setup)
+
+		- "PLAY OKAY"
+			client's turn is over; server will reply to the client to wait for the other player to finish his turn
+
+		- "QUIT"
+			client will disconnect from the server; server will notify other player
+
+	> the client determines what action to take based on the game_state the server sends. The client will change their game_state to the one indicated by the message. Then it will check for the optional fields depending on the game_state (ex. if the game_state is "SETUP", the client will search for additional fields (such as 'index_list') required for setting up the game)
+
+
+========================================
+APPLICATION
+========================================
+
+I. Instructions on How to Build and Run the Application
+	- application can be downloaded from github.com/ohandie/memorygame
+	- final application can be found in the version3 folder
+	- run server.py on terminal
+	- run client.py to connect to server and play the game (game requires two players to connect)
+
+II. Minimum Requirements and Dependencies
+	- Python 2.7.3
+	- pyglet module
