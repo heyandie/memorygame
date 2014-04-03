@@ -264,15 +264,16 @@ get_host = gui.TextWidget('',
 						y = game_window.height//2 - 80,
 						width = 300,
 				        height = 28,
-						batch=start_batch
+						batch=start_batch,
+						world=game_window
 						)
-
 get_port = gui.TextWidget('',
 						x = game_window.width//2 - 100,
 						y = game_window.height//2 - 130,
 						width = 300,
 				        height = 28,
-						batch=start_batch
+						batch=start_batch,
+						world=game_window
 						)
 
 get_username = gui.TextWidget('',
@@ -280,8 +281,13 @@ get_username = gui.TextWidget('',
 						y = game_window.height//2 - 180,
 						width = 300,
 				        height = 28,
-						batch=start_batch
+						batch=start_batch,
+						world=game_window
 						)
+
+game_window.push_handlers(get_host)
+game_window.push_handlers(get_port)
+game_window.push_handlers(get_username)
 	
 @game_window.event
 def on_draw():

@@ -1,4 +1,5 @@
 import pyglet
+from game.resources import SharedVar
 
 class Rectangle(object):
     '''Draws a rectangle into a batch.'''
@@ -9,7 +10,7 @@ class Rectangle(object):
         )
 
 class TextWidget(object):
-    def __init__(self, text, x, y, width, height, batch):
+    def __init__(self, text, x, y, width, height, batch, world):
         self.document = pyglet.text.document.UnformattedDocument(text)
         self.document.set_style(0, len(self.document.text), 
             dict(color=(0, 0, 0, 255))
@@ -31,7 +32,7 @@ class TextWidget(object):
                                    x + width + pad, y + height + pad, batch)
 
     def hit_test(self, x, y):
-        if self.active and self.world.game_state == Resources.state[self.curr_state]:
+        if self.world.game_state == SharedVar.state["START"]:
             return (0 < x - self.layout.x < self.layout.width and
                     0 < y - self.layout.y < self.layout.height)
         return False
@@ -48,14 +49,9 @@ class TextWidget(object):
         if self.world.focus is self:
             self.world.focus.caret.on_text_motion_select(motion)
 
-    def on_mouse_motion(self, x, y, dx, dy):
-        if self.hit_test(x, y):
-            self.world.window.set_mouse_cursor(self.text_cursor)
-
     def on_mouse_press(self, x, y, button, modifiers):
-        if button == mouse.LEFT:
+        if symbol == mouse.LEFT:
             if self.hit_test(x, y):
-                # print 'Focusing TextWidget:',self.name
                 self.world.set_focus(self)
 
         if self.world.focus is self:
