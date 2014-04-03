@@ -48,7 +48,7 @@ window_height = 600
 event_loop = pyglet.app.EventLoop()
 
 # this is the main game window
-game_window = pyglet.window.Window(window_width,window_height)
+game_window = Window()#pyglet.window.Window(window_width,window_height)
 
 # generate cards
 # this is the array for the cards in the boards
@@ -265,7 +265,6 @@ get_host = gui.TextWidget('',
 						width = 300,
 				        height = 28,
 						batch=start_batch,
-						world=game_window
 						)
 get_port = gui.TextWidget('',
 						x = game_window.width//2 - 100,
@@ -273,7 +272,6 @@ get_port = gui.TextWidget('',
 						width = 300,
 				        height = 28,
 						batch=start_batch,
-						world=game_window
 						)
 
 get_username = gui.TextWidget('',
@@ -282,12 +280,12 @@ get_username = gui.TextWidget('',
 						width = 300,
 				        height = 28,
 						batch=start_batch,
-						world=game_window
 						)
 
 game_window.push_handlers(get_host)
 game_window.push_handlers(get_port)
 game_window.push_handlers(get_username)
+
 	
 @game_window.event
 def on_draw():
@@ -427,6 +425,10 @@ def update(dt):
 	# print game_state
 	# print "update", game_state
 
+	global get_host
+	global get_port
+	global get_username
+
 	# --- Game Loop ------------------------------------------------------------
 
 	if msg == "Goodbye!":
@@ -439,6 +441,11 @@ def update(dt):
 		# index_list = [i for i in range(10)] + [i for i in range(10)]
 		# random.shuffle(index_list)
 		# index_list = data['index_list']
+
+		get_host.active = False
+		get_port.active = False
+		get_username.active = False
+
 
 		# generate images for the card
 		i = 0
@@ -477,6 +484,10 @@ def update(dt):
 		to_receive = True
 
 	elif game_state == SharedVar.state['START']:
+		get_host.active = True
+		get_port.active = True
+		get_username.active = True
+
 		to_receive = False
 
 	elif game_state == SharedVar.state['END']:

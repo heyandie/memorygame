@@ -1,4 +1,6 @@
 import pyglet
+from pyglet.window import mouse
+from pyglet.window import key
 from game.resources import SharedVar
 
 class Rectangle(object):
@@ -10,7 +12,7 @@ class Rectangle(object):
         )
 
 class TextWidget(object):
-    def __init__(self, text, x, y, width, height, batch, world):
+    def __init__(self, text, x, y, width, height, batch):
         self.document = pyglet.text.document.UnformattedDocument(text)
         self.document.set_style(0, len(self.document.text), 
             dict(color=(0, 0, 0, 255))
@@ -25,6 +27,7 @@ class TextWidget(object):
 
         self.layout.x = x
         self.layout.y = y
+        self.active = True
 
         # Rectangular outline
         pad = 2
@@ -32,7 +35,7 @@ class TextWidget(object):
                                    x + width + pad, y + height + pad, batch)
 
     def hit_test(self, x, y):
-        if self.world.game_state == SharedVar.state["START"]:
+        if self.active:
             return (0 < x - self.layout.x < self.layout.width and
                     0 < y - self.layout.y < self.layout.height)
         return False
@@ -50,7 +53,7 @@ class TextWidget(object):
             self.world.focus.caret.on_text_motion_select(motion)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if symbol == mouse.LEFT:
+        if button == mouse.LEFT:
             if self.hit_test(x, y):
                 self.world.set_focus(self)
 

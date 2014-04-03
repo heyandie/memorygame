@@ -179,7 +179,7 @@ class Player(Thread):
     				'player2':SharedVar.player2}
 
 	    		self.send(message_to_send)
-	    		self.send_other(message_to_send)
+	    		# self.send_other(message_to_send)
 
 	    		# if self.name == "player1":
 		    	# 	SharedVar.player1_connected = True
