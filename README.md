@@ -16,9 +16,9 @@ version3 implements the client-server model for networking. Currently a work in 
 [ ] Option for players to have their own username (may be the same)
 [x] Send messages to all or selected users
 [x] Receive messages from all
-[ ] Option to share other kinds of information (score)
-[x] Voluntary disconnect
-[ ] Notification when other user disconnects
+[x] Share other kinds of information to other users (flipped cards)
+[ ] Voluntary disconnect
+[x] Notification when other user disconnects
 
 ## Dependencies
 
