@@ -69,10 +69,10 @@ import pyglet
 import time
 import thread
 import random
-# import socket
+import socket
 import traceback
-import eventlet
-from eventlet.green import socket
+# import eventlet
+# from eventlet.green import socket
 from threading import Thread
 from connect import connection
 from game import resources

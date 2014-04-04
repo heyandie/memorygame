@@ -19,11 +19,11 @@ import pyglet
 import time
 import thread
 import random
-# import socket
+import socket
 import traceback
 import threading
-import eventlet
-from eventlet.green import socket
+# import eventlet
+# from eventlet.green import socket
 from game.connect import connection
 from pyglet.window import mouse
 from pyglet.window import key
@@ -211,13 +211,41 @@ def on_draw():
 
 # --- Client Configuration -----------------------------------------------------------------------------------------
 
-def connectToServer(clientsocket):
-	host = ''#'10.40.72.114' #raw_input("Enter IP Address: ")
-	port = 1111 #int(raw_input("Enter port number: "))
+def connectToServer(clientsocket, host, port):
+	# host = ''#'10.40.72.114' #raw_input("Enter IP Address: ")
+	# port = 1111 #int(raw_input("Enter port number: "))
 	clientsocket.connect((host, port))
 	link = connection(clientsocket)
 	print link.getMessage()
 	return link
+
+def establishConnection(host, port):
+	global link
+	global clientsocket
+	global game_state
+	global state
+	global msg
+	global to_receive
+	global index_list
+
+	# connect with server first
+	while link == None:
+		try:
+			clientsocket = socket.socket()
+			link = connectToServer(clientsocket, host, port)
+			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT']}
+			send(data)
+			data = receive()
+			print "receiving..."
+			state = data['state']
+			game_state = data['game_state']
+			msg = data['msg']
+			if game_state == SharedVar.state['SETUP']:
+				index_list = data['index_list']
+
+		except Exception as error:
+			print "Client: Error occured! " + str(error)
+			traceback.print_exc()
 
 # --- Communication with Server ------------------------------------------------------------------------------------
 
@@ -442,24 +470,11 @@ def main():
 	global to_receive
 	global index_list
 
-	# connect with server first
-	while link == None:
-		try:
-			clientsocket = socket.socket()
-			link = connectToServer(clientsocket)
-			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT']}
-			send(data)
-			data = receive()
-			print "receiving..."
-			state = data['state']
-			game_state = data['game_state']
-			msg = data['msg']
-			if game_state == SharedVar.state['SETUP']:
-				index_list = data['index_list']
+	host = raw_input("Host: ")
+	port = int(raw_input("Port: "))
+	username = raw_input("Username: ")
 
-		except Exception as error:
-			print "Client: Error occured! " + str(error)
-			traceback.print_exc()
+	establishConnection(host, port)
 
 	# start game
 	pyglet.clock.schedule_interval(update, 1/120.0)

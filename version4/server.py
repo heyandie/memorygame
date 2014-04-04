@@ -8,10 +8,10 @@ Feel free to edit if there's missing code or extra code.
 """
 
 import thread
-# import socket
+import socket
 import traceback
-import eventlet
-from eventlet.green import socket
+# import eventlet
+# from eventlet.green import socket
 from threading import Thread
 from game.connect import connection
 from game.player import Player
@@ -26,9 +26,9 @@ serversocket = None
 
 # --- Server Configuration -----------------------------------------------------------------------------------------
 
-def socketSetup():
-	host = ''
-	port = 1111 #int(raw_input("Enter port number: "))
+def socketSetup(host, port):
+	# host = ''
+	# port = 1111 #int(raw_input("Enter port number: "))
 	serversocket = socket.socket()
 
 	serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -55,8 +55,11 @@ def main():
 	global serversocket
 	global clientlist
 
+	host = ''#raw_input("Host: ")
+	port = int(raw_input("Port: "))
+
 	try:
-		serversocket = socketSetup()
+		serversocket = socketSetup(host, port)
 
 		while True:
 			# first client to connect will be the player1 thread
