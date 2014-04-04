@@ -104,6 +104,9 @@ player1 = 0
 player2 = 0
 index_list = []
 username = None
+user1 = None
+user2 = None
+player = 0
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -205,10 +208,120 @@ def on_close():
 	event_loop.exit()
 	game_window.close()
 	
+
+game_over = pyglet.text.Label("Game Over!",
+			font_name = "Liberation Serif",
+			font_size = 36,
+			x = game_window.width//2,
+			y = game_window.height//2 + 150,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
+player1_label = pyglet.text.Label("Player 1",
+			font_name = "Liberation Serif",
+			font_size = 24,
+			x = game_window.width//2 - 240,
+			y = game_window.height//2 + 50,
+			)
+
+player2_label = pyglet.text.Label("Player 2",
+			font_name = "Liberation Serif",
+			font_size = 24,
+			x = game_window.width//2 - 240,
+			y = game_window.height//2 + 10,
+			)
+
+player1_score = pyglet.text.Label("0",
+			font_name = "Liberation Serif",
+			font_size = 24,
+			x = game_window.width//2 + 200,
+			y = game_window.height//2 + 70,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
+player2_score = pyglet.text.Label("0",
+			font_name = "Liberation Serif",
+			font_size = 24,
+			x = game_window.width//2 + 200,
+			y = game_window.height//2 + 30,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
+draw_label = pyglet.text.Label("Draw!",
+			font_name = "Liberation Serif",
+			font_size = 30,
+			x = game_window.width//2,
+			y = game_window.height//2 - 80,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
+player1_win = pyglet.text.Label("Player 1 Wins!",
+			font_name = "Liberation Serif",
+			font_size = 30,
+			x = game_window.width//2,
+			y = game_window.height//2 - 80,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
+player2_win = pyglet.text.Label("Player 2 Wins!",
+			font_name = "Liberation Serif",
+			font_size = 30,
+			x = game_window.width//2,
+			y = game_window.height//2 - 80,
+			anchor_x = 'center',
+			anchor_y = 'center',
+			)
+
 @game_window.event
 def on_draw():
+	global game_state
+	global player1
+	global player2
+	global user1
+	global user2
 	game_window.clear()
-	draw_cards(cards_list)
+
+	player1_score.text = str(player1)
+	player2_score.text = str(player2)
+
+	if user1 != '':
+		player1_label.text = str(user1) + " (Player 1)"
+		player1_win.text = str(user1) + " Wins!"
+	if user2 != '':
+		player2_label.text = str(user2) + " (Player 2)"
+		player2_win.text = str(user2) + " Wins!"
+
+
+	if game_state == SharedVar.state['END'] or game_state == SharedVar.state['TRANSITION']:
+		game_over.draw()
+		player1_label.draw()
+		player2_label.draw()
+		player1_score.draw()
+		player2_score.draw()
+		if player1 > player2:
+			player1_win.draw()
+		elif player2 > player1:
+			player2_win.draw()
+		else:
+			draw_label.draw()
+	
+	else:
+		draw_cards(cards_list)
+
+@game_window.event
+def on_close():
+	global clientsocket
+	global game_state
+	send_data = {'state':"QUIT", 'game_state':game_state}
+	send(send_data)
+	clientsocket.close()
+	event_loop.exit()
+	pyglet.app.exit()
 
 # --- Client Configuration -----------------------------------------------------------------------------------------
 
@@ -236,7 +349,7 @@ def establishConnection(host, port):
 		try:
 			clientsocket = socket.socket()
 			link = connectToServer(clientsocket, host, port)
-			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT']}
+			data = {'state':"CONNECT", 'game_state':SharedVar.state['WAIT'], 'username': username}
 			send(data)
 			data = receive()
 			print "receiving..."
@@ -368,6 +481,9 @@ def update(dt):
 	global matched_index
 	global cards_list
 	global username
+	global player
+	global user1
+	global user2
 
 	# --- Game Loop ------------------------------------------------------------
 
@@ -421,14 +537,15 @@ def update(dt):
 		player1 = data['player1']
 		player2 = data['player2']
 		print "GAME OVER"
-		print "PLAYER 1 SCORE:", player1
-		print "PLAYER 2 SCORE:", player2
-		if player1 > player2:
-			print "PLAYER 1 WINS!!"
-		elif player2 > player1:
-			print "PLAYER 2 WINS!!"
-		else:
-			print "IT'S A DRAW!!"
+		# print "PLAYER 1 SCORE:", player1
+		# print "PLAYER 2 SCORE:", player2
+		# if player1 > player2:
+		# 	print "PLAYER 1 WINS!!"
+		# elif player2 > player1:
+		# 	print "PLAYER 2 WINS!!"
+		# else:
+		# 	print "IT'S A DRAW!!"
+		# print user1, user2
 
 		to_receive = False
 		game_state = SharedVar.state['TRANSITION']
@@ -455,6 +572,10 @@ def update(dt):
 					if index in matched_index:
 						card.current = card.front
 
+			if game_state == SharedVar.state["END"]:
+				player = data['player']
+				user1 = data['user1']
+				user2 = data['user2']
 			print msg
 			to_receive = False
 

@@ -137,6 +137,7 @@ class Player(Thread):
         self.addr = addr
         self.serversocket = server
         self.other_link = None
+        self.username = None
 
     # --- Communication -------------------------------
 
@@ -147,9 +148,9 @@ class Player(Thread):
 
     def send_other(self, message):
     	message = json.dumps(message)
-    	if self.name == "player1":
+    	if self.name == "player1" and SharedVar.clients[1] != None:
     		SharedVar.clients[1].link.sendMessage(message)
-    	elif self.name == "player2":
+    	elif self.name == "player2" and SharedVar.clients[0] != None:
     		SharedVar.clients[0].link.sendMessage(message)
     	print "Send to other player."
 
@@ -172,21 +173,23 @@ class Player(Thread):
 
 	    	if state == "CONNECT":
 	    		if self.name == "player1":
+		    		SharedVar.username1 = data['username']
 		    		SharedVar.player1_connected = True
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['SETUP'],
 							'msg': "Waiting for other player to connect...!",
 							'index_list':index_list,
-							'caption':"Player 1"
+							'caption':"Player 1",
 							})
 
 	    		elif self.name == "player2":
+		    		SharedVar.username2 = data['username']
 		    		SharedVar.player2_connected = True
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['SETUP'],
 							'msg': "SETUP game!",
 							'index_list':index_list,
-							'caption':"Player 2"
+							'caption':"Player 2",
 							})
 
 		    	if SharedVar.player1_connected and SharedVar.player2_connected:
@@ -221,15 +224,31 @@ class Player(Thread):
 	    				SharedVar.matched_index.append(index)
 
 	    		if SharedVar.player1 + SharedVar.player2 == 10:
-	    			message_to_send = {'state':"END",
-	    				'game_state':SharedVar.state['END'],
-	    				'msg': "Game Over!",
-	    				'matched_index':SharedVar.matched_index,
-	    				'player1':SharedVar.player1,
-	    				'player2':SharedVar.player2}
+	    			if self.name == "player1":
+		    			message_to_send = {'state':"END",
+		    				'game_state':SharedVar.state['END'],
+		    				'msg': "Game Over!",
+		    				'matched_index':SharedVar.matched_index,
+		    				'player1':SharedVar.player1,
+		    				'player2':SharedVar.player2,
+		    				'player':1,
+		    				'user1': SharedVar.username1,
+		    				'user2': SharedVar.username2}
 
+	    			if self.name == "player2":
+		    			message_to_send = {'state':"END",
+		    				'game_state':SharedVar.state['END'],
+		    				'msg': "Game Over!",
+		    				'matched_index':SharedVar.matched_index,
+		    				'player1':SharedVar.player1,
+		    				'player2':SharedVar.player2,
+		    				'player':2,
+		    				'user1': SharedVar.username1,
+		    				'user2': SharedVar.username2}
 		    		self.send(message_to_send)
 		    		self.send_other(message_to_send)
+		    		print SharedVar.username1
+		    		print SharedVar.username2
 
 		    	else:
 			    	if data['score'] == 0: # turn over
@@ -257,9 +276,9 @@ class Player(Thread):
 		    				})
 
 	    	elif state == "QUIT":
-	    		self.send({'state':"OKAY",
-	    				'game_state':"END",
-	    				'msg': "Goodbye!"})
+	    		# self.send({'state':"OKAY",
+	    		# 		'game_state':"END",
+	    		# 		'msg': "Goodbye!"})
 
 	    		if self.name == "player1":
 		    		SharedVar.player1_connected = False
@@ -276,9 +295,9 @@ class Player(Thread):
 	    		# self.serversocket.close()
 
 	    		if self.name == "player1":
-		    		SharedVar.clientlist[0] = None
+		    		SharedVar.clients[0] = None
 	    		elif self.name == "player2":
-		    		SharedVar.clientlist[1] = None
+		    		SharedVar.clients[1] = None
 
 	    		return
 

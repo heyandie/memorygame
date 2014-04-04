@@ -66,3 +66,6 @@ class SharedVar:
 
 	matched_index = []
 	other = None
+
+	username1 = ''
+	username2 = ''
