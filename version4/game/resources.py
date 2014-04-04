@@ -11,6 +11,12 @@ pyglet.resource.reindex()
 card_back = pyglet.resource.image("cardback.png")
 position_image(card_back, 0, card_back.height)
 
+game_background = pyglet.resource.image("game_background.png")
+position_image(game_background, 0, game_background.height)
+
+game_title = pyglet.resource.image("game_title.png")
+position_image(game_title, 0, game_title.height)
+
 card_front = []
 card_front_list = os.listdir("../resources/cards_front")
 

@@ -62,13 +62,19 @@ cards_list = []
 index_list = []
 
 # initialize game_state to WAIT; required data for communication
-game_state = SharedVar.state['WAIT']
+game_state = SharedVar.state['START']
 state = None
 msg = None
 send_message = False
 
 # for going through a game state once
 start = True
+
+# window bg
+game_background = pyglet.sprite.Sprite(img=resources.game_background,x=0,y=window_height)
+
+# game title
+game_title = pyglet.sprite.Sprite(img=resources.game_title,x=0,y=window_height)
 
 # selector for the card
 card_select_border = pyglet.sprite.Sprite(img=resources.card_select_border,x=0,y=window_height)
@@ -90,6 +96,9 @@ flipped_cards = []
 
 # stores the flipped indexes
 flipped_index = []
+
+# other player's flipped
+other_flipped = []
 
 # scores for players (should be deleted and integrate with server?)
 player1 = 0
@@ -132,76 +141,80 @@ def on_key_press(symbol, modifiers):
 	global player1
 	global player2
 
-	# let user move selector to the right
-	if symbol == key.RIGHT:
-		if card_select_border.x + card_select_border.width >= window_width:
-			card_select_border.x = 0
-		else:
-			card_select_border.x += card_select_border.width
+	if game_state == SharedVar.state['PLAY']:
+		# let user move selector to the right
+		if symbol == key.RIGHT:
+			if card_select_border.x + card_select_border.width >= window_width:
+				card_select_border.x = 0
+			else:
+				card_select_border.x += card_select_border.width
 
-		if card_select_x >= 4:
-			card_select_x = 0
-		else:
-			card_select_x += 1
+			if card_select_x >= 4:
+				card_select_x = 0
+			else:
+				card_select_x += 1
 
-		card_select_pos = card_select_x + (card_select_y * 5)
+			card_select_pos = card_select_x + (card_select_y * 5)
 
-	# let user move selector to the left
-	if symbol == key.LEFT:
-		if card_select_border.x - card_select_border.width < 0:
-			card_select_border.x = window_width - card_select_border.width
-		else:
-			card_select_border.x -= card_select_border.width
+		# let user move selector to the left
+		if symbol == key.LEFT:
+			if card_select_border.x - card_select_border.width < 0:
+				card_select_border.x = window_width - card_select_border.width
+			else:
+				card_select_border.x -= card_select_border.width
 
-		if card_select_x <= 0:
-			card_select_x = 4
-		else:
-			card_select_x -= 1
-
-	card_select_pos = card_select_x + (card_select_y * 5)
-
-	# let user move selector upwards
-	if symbol == key.UP:
-		if card_select_border.y + card_select_border.height >= window_height + card_select_border.height:
-			card_select_border.y= card_select_border.height
-		else:
-			card_select_border.y += card_select_border.height
-
-		if card_select_y <= 0:
-			card_select_y = 3
-		else:
-			card_select_y -= 1
-		
-		card_select_pos = card_select_x + (card_select_y * 5)
-
-	# let user move selector downwards
-	if symbol == key.DOWN:
-		if card_select_border.y - card_select_border.height < card_select_border.height:
-			card_select_border.y = window_height
-		else:
-			card_select_border.y -= card_select_border.height
-
-		if card_select_y >= 3:
-			card_select_y = 0
-		else:
-			card_select_y += 1
+			if card_select_x <= 0:
+				card_select_x = 4
+			else:
+				card_select_x -= 1
 
 		card_select_pos = card_select_x + (card_select_y * 5)
 
-	# let the users flip up a card
-	if symbol == key.SPACE:
-		if card_select_pos not in matched_index and card_select_pos not in flipped_index:
-			cards_list[card_select_pos].current = cards_list[card_select_pos].front
-			flipped_cards.append(cards_list[card_select_pos])
-			flipped_index.append(card_select_pos)
+		# let user move selector upwards
+		if symbol == key.UP:
+			if card_select_border.y + card_select_border.height >= window_height + card_select_border.height:
+				card_select_border.y= card_select_border.height
+			else:
+				card_select_border.y += card_select_border.height
+
+			if card_select_y <= 0:
+				card_select_y = 3
+			else:
+				card_select_y -= 1
+			
+			card_select_pos = card_select_x + (card_select_y * 5)
+
+		# let user move selector downwards
+		if symbol == key.DOWN:
+			if card_select_border.y - card_select_border.height < card_select_border.height:
+				card_select_border.y = window_height
+			else:
+				card_select_border.y -= card_select_border.height
+
+			if card_select_y >= 3:
+				card_select_y = 0
+			else:
+				card_select_y += 1
+
+			card_select_pos = card_select_x + (card_select_y * 5)
+
+		# let the users flip up a card
+		if symbol == key.SPACE:
+			if card_select_pos not in matched_index and card_select_pos not in flipped_index:
+				cards_list[card_select_pos].current = cards_list[card_select_pos].front
+				flipped_cards.append(cards_list[card_select_pos])
+				flipped_index.append(card_select_pos)
+				send_data = {'state':"SYNC", 'game_state':game_state, 'flipped':card_select_pos}
+				send(send_data)
 
 # on key release events
 @game_window.event
 def on_key_release(symbol,modifiers):
-	if symbol == key.SPACE:
-		# if there are already 2 flipped cards on the board
-		if len(flipped_cards) == 2:
-			check_move()
+	if game_state == SharedVar.state['PLAY']:
+		if symbol == key.SPACE:
+			# if there are already 2 flipped cards on the board
+			if len(flipped_cards) == 2:
+				check_move()
 
 @game_window.event
 def on_close():
@@ -288,6 +301,11 @@ def on_draw():
 
 	player1_score.text = str(player1)
 	player2_score.text = str(player2)
+
+	if game_state == SharedVar.state['START']:
+		game_background.draw()
+		game_title.draw()
+		print "statatatat"
 
 	if user1 != '':
 		player1_label.text = str(user1) + " (Player 1)"
@@ -462,6 +480,9 @@ def check_move():
 	# empty the flipped cards
 	flipped_cards = []
 
+	# other player's flipped
+	other_flipped = []
+
 	# empty the flipped indexes
 	flipped_index = []
 
@@ -484,6 +505,7 @@ def update(dt):
 	global player
 	global user1
 	global user2
+	global other_flipped
 
 	# --- Game Loop ------------------------------------------------------------
 
@@ -567,15 +589,34 @@ def update(dt):
 			msg = data['msg']
 
 			if game_state == SharedVar.state["PLAY"] or game_state == SharedVar.state["END"]:
+				for index, card in enumerate(cards_list):
+					if index in other_flipped:
+						card.current = card.back
+
 				matched_index = data['matched_index']
 				for index, card in enumerate(cards_list):
 					if index in matched_index:
 						card.current = card.front
 
+				
+
+				other_flipped = []
+
+
+
 			if game_state == SharedVar.state["END"]:
 				player = data['player']
 				user1 = data['user1']
 				user2 = data['user2']
+
+			if game_state == SharedVar.state["WAIT"]:
+				if 'flipped' in data.keys():
+
+					index = data['flipped']
+					other_flipped.append(index)
+					cards_list[index].current = cards_list[index].front
+
+
 			print msg
 			to_receive = False
 

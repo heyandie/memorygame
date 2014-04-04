@@ -212,6 +212,14 @@ class Player(Thread):
 							'index_list':index_list
 							})
 
+	    	elif state == "SYNC":
+	    			
+	    			self.send_other({'state':"OKAY",
+		    			    'game_state':SharedVar.state['WAIT'],
+		    			    'msg': "flipped",	    			    
+		    		    	'flipped':data['flipped']
+		    	     		})
+
 	    	elif state == "PLAY OKAY":
 	    		if self.name == "player1":
 		    		SharedVar.player1 += data['score']
