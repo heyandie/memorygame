@@ -103,6 +103,7 @@ to_receive = True
 player1 = 0
 player2 = 0
 index_list = []
+username = None
 
 # --- Frontend -----------------------------------------------------------------------------------------------------
 
@@ -227,6 +228,8 @@ def establishConnection(host, port):
 	global msg
 	global to_receive
 	global index_list
+	global username
+	global game_window
 
 	# connect with server first
 	while link == None:
@@ -242,6 +245,12 @@ def establishConnection(host, port):
 			msg = data['msg']
 			if game_state == SharedVar.state['SETUP']:
 				index_list = data['index_list']
+				if username == '':
+					username = data['caption']
+				else:
+					username = username + " (" + data['caption'] + ")"
+				
+				game_window.set_caption(username)
 
 		except Exception as error:
 			print "Client: Error occured! " + str(error)
@@ -358,8 +367,7 @@ def update(dt):
 	global index_list
 	global matched_index
 	global cards_list
-	# print game_state
-	# print "update", game_state
+	global username
 
 	# --- Game Loop ------------------------------------------------------------
 
@@ -373,7 +381,6 @@ def update(dt):
 		# index_list = [i for i in range(10)] + [i for i in range(10)]
 		# random.shuffle(index_list)
 		# index_list = data['index_list']
-
 		# generate images for the card
 		i = 0
 		j = 0
@@ -469,10 +476,14 @@ def main():
 	global msg
 	global to_receive
 	global index_list
+	global username
+	global game_window
 
 	host = raw_input("Host: ")
 	port = int(raw_input("Port: "))
 	username = raw_input("Username: ")
+	if username != None:
+		game_window.set_caption(username)
 
 	establishConnection(host, port)
 

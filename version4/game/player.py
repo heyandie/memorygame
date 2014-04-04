@@ -176,7 +176,8 @@ class Player(Thread):
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['SETUP'],
 							'msg': "Waiting for other player to connect...!",
-							'index_list':index_list
+							'index_list':index_list,
+							'caption':"Player 1"
 							})
 
 	    		elif self.name == "player2":
@@ -184,7 +185,8 @@ class Player(Thread):
 		    		self.send({'state':"OKAY",
 							'game_state':SharedVar.state['SETUP'],
 							'msg': "SETUP game!",
-							'index_list':index_list
+							'index_list':index_list,
+							'caption':"Player 2"
 							})
 
 		    	if SharedVar.player1_connected and SharedVar.player2_connected:
