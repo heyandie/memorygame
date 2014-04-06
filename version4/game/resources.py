@@ -1,5 +1,7 @@
 import pyglet
 import os
+import random
+
 def position_image(image,x,y):
 
 	image.anchor_x = x
@@ -69,6 +71,9 @@ class SharedVar:
 
 	player1 = 0
 	player2 = 0
+
+	index_list = [i for i in range(20)]
+	random.shuffle(index_list)
 
 	matched_index = []
 	other = None

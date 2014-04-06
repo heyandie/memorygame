@@ -122,8 +122,7 @@ flipped_cards = []
 # stores the flipped indexes
 flipped_index = []
 
-index_list = [i for i in range(20)]
-random.shuffle(index_list)
+index_list = SharedVar.index_list
 
 
 # --- Main ---------------------------------------------------------------------------------------------------------
